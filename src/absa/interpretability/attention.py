@@ -10,4 +10,4 @@ def align_attention(review: str, weights, *, max_length: int = 80) -> list[dict[
     """Align visible tokenizer tokens with non-padding attention weights."""
     visible = tokens(review)[:max_length]
     values = weights.detach().cpu().tolist() if hasattr(weights, "detach") else list(weights)
-    return [{"token": token, "weight": float(values[index])} for index, token in enumerate(visible)]
+    return [{"token": token, "weight": float(weight)} for token, weight in zip(visible, values)]

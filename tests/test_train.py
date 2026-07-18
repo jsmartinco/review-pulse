@@ -170,13 +170,14 @@ def test_train_checkpoint_model_config_matches(tmp_path):
 def test_train_real_data_one_epoch():
     """One epoch on real data must complete without error and return val_f1 > 0."""
     import tempfile
-    from src.data.parser import load_all_domains
+    from src.data.parser import has_labeled_review_files, load_all_domains
     from src.data.preprocess import preprocess
     from src.tokenization.vocab import save_vocab
 
-    raw = load_all_domains()
-    if raw.empty:
+    if not has_labeled_review_files():
         pytest.skip("Legacy Amazon review data is not installed locally")
+    raw = load_all_domains()
+    assert not raw.empty, "Legacy review files exist but the parser returned no records"
     train_df, val_df, _ = preprocess(raw)
     vocab = build_vocab(train_df["text"])
 

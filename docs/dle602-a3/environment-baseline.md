@@ -36,7 +36,7 @@ Command:
 .venv/bin/python -m pytest -q
 ```
 
-Result after the v3 integration checks: **215 passed, 8 skipped**.
+Result after the v3 integration checks: **217 passed, 8 skipped**.
 
 The skipped cases require the local Amazon `.review` files for Books, DVD, Electronics and Kitchen & Housewares. Those directories are intentionally gitignored and are absent in a clean clone. They are data-availability skips, not v3 regressions:
 

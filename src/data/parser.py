@@ -50,6 +50,15 @@ def _resolve_domain_path(data_dir: Path, domain_path: Path) -> Path:
     return data_dir / domain_path.name if data_dir != DATA_DIR else domain_path
 
 
+def has_labeled_review_files(data_dir: Path = DATA_DIR) -> bool:
+    """Return whether every required legacy positive and negative file exists."""
+    return all(
+        (_resolve_domain_path(data_dir, domain_path) / filename).is_file()
+        for domain_path in DOMAINS.values()
+        for filename in LABEL_MAP
+    )
+
+
 def load_all_domains(data_dir: Path = DATA_DIR) -> pd.DataFrame:
     """Load positive and negative reviews from all 4 domains.
 

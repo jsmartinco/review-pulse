@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.data.parser import load_all_domains, load_unlabeled_domains, parse_review_file
+from src.data.parser import has_labeled_review_files, load_all_domains, load_unlabeled_domains, parse_review_file
 
 # Minimal pseudo-XML fixture — mirrors the real .review file format
 SAMPLE_VALID = """
@@ -72,9 +72,10 @@ def test_parse_multiple_reviews(tmp_path: Path) -> None:
 
 @pytest.fixture
 def legacy_dataset() -> pd.DataFrame:
-    dataset = load_all_domains()
-    if dataset.empty:
+    if not has_labeled_review_files():
         pytest.skip("Legacy Amazon review data is not installed locally")
+    dataset = load_all_domains()
+    assert not dataset.empty, "Legacy review files exist but the parser returned no records"
     return dataset
 
 def test_load_all_domains_returns_dataframe() -> None:

@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class AspectExample:
     sentence_id: str
     review_raw: str

@@ -1,7 +1,8 @@
 """Parse SemEval-2014 Restaurants aspect-term annotations."""
 
-import xml.etree.ElementTree as etree
 from pathlib import Path
+
+from defusedxml import ElementTree as etree
 
 from .schema import AspectExample
 

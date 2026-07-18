@@ -20,14 +20,27 @@ def train_target_lstm(train_rows, test_rows, *, epochs: int = 8, batch_size: int
     vocab = build_vocab([row.review_raw for row in splits.train])
     model = TargetAgnosticLSTM(len(vocab))
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-    loader = DataLoader(TensorDataset(encode([r.review_raw for r in splits.train], vocab), torch.tensor([LABEL_TO_ID[r.label] for r in splits.train])), batch_size=batch_size, shuffle=True)
+    loader = DataLoader(
+        TensorDataset(
+            encode([row.review_raw for row in splits.train], vocab),
+            torch.tensor([LABEL_TO_ID[row.label] for row in splits.train]),
+        ),
+        batch_size=batch_size,
+        shuffle=True,
+    )
+    loss_function = torch.nn.CrossEntropyLoss()
     model.train()
     for _ in range(epochs):
         for x, y in loader:
-            optimizer.zero_grad(); loss = torch.nn.CrossEntropyLoss()(model(x), y); loss.backward(); optimizer.step()
+            optimizer.zero_grad()
+            loss = loss_function(model(x), y)
+            loss.backward()
+            optimizer.step()
+
     def score(rows):
         model.eval()
-        with torch.no_grad(): prediction = model(encode([r.review_raw for r in rows], vocab)).argmax(1).tolist()
+        with torch.no_grad():
+            prediction = model(encode([row.review_raw for row in rows], vocab)).argmax(1).tolist()
         labels = [r.label for r in rows]
         inverse = {value: key for key, value in LABEL_TO_ID.items()}
         return compute_metrics(labels, [inverse[value] for value in prediction])

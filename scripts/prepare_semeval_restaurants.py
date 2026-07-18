@@ -13,9 +13,10 @@ import hashlib
 import json
 import shutil
 import sys
-import xml.etree.ElementTree as etree
 from pathlib import Path
 
+from defusedxml import ElementTree as etree
+from defusedxml.common import DefusedXmlException
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DESTINATION = PROJECT_ROOT / "data" / "semeval2014" / "restaurants"
@@ -35,7 +36,7 @@ def validate_semeval_xml(path: Path) -> None:
     """Reject unreadable XML or a file that is not a SemEval sentence corpus."""
     try:
         root = etree.parse(path).getroot()
-    except etree.ParseError as exc:
+    except (etree.ParseError, DefusedXmlException) as exc:
         raise ValueError(f"Invalid XML: {path}") from exc
     if root.tag != "sentences":
         raise ValueError(f"Expected a <sentences> root in {path}, found <{root.tag}>")

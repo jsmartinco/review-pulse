@@ -1,3 +1,5 @@
+import pytest
+
 from src.absa.data.schema import AspectExample
 from src.absa.data.splits import assert_disjoint_sentence_ids, split_official_data
 
@@ -17,13 +19,10 @@ def test_grouped_split_is_deterministic_and_keeps_sentence_aspects_together() ->
     dev_ids = {item.sentence_id for item in first.development}
     assert ("s0" in train_ids) != ("s0" in dev_ids)
     assert first.test == tuple(test)
+    assert set(first.label_distributions["development"]) == {"negative", "neutral", "positive"}
 
 
 def test_overlap_assertion_fails_loudly() -> None:
     row = _example("duplicate")
-    try:
+    with pytest.raises(ValueError, match="duplicate"):
         assert_disjoint_sentence_ids((row,), (row,))
-    except ValueError as exc:
-        assert "duplicate" in str(exc)
-    else:
-        raise AssertionError("Expected leakage assertion to fail")

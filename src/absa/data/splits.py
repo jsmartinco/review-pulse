@@ -14,6 +14,20 @@ class ABSASplits:
     development: tuple[AspectExample, ...]
     test: tuple[AspectExample, ...]
 
+    @property
+    def label_distributions(self) -> dict[str, dict[str, int]]:
+        """Expose label counts so grouped split balance is visible to callers."""
+        return {
+            "train": label_distribution(self.train),
+            "development": label_distribution(self.development),
+            "test": label_distribution(self.test),
+        }
+
+
+def label_distribution(examples: tuple[AspectExample, ...]) -> dict[str, int]:
+    """Return counts for every core label, including labels absent from a partition."""
+    return {label: sum(example.label == label for example in examples) for label in LABELS}
+
 
 def retained_examples(examples: list[AspectExample]) -> list[AspectExample]:
     """Keep the core three-class task; audit reports original conflict separately."""

@@ -18,18 +18,37 @@ def train_atae_lstm(train_rows, test_rows, *, epochs: int = 8, batch_size: int =
     splits = split_official_data(train_rows, test_rows, seed=seed)
     vocab = build_vocab([row.review_raw for row in splits.train])
     model = ATAELSTM(len(vocab))
-    loader = DataLoader(TensorDataset(encode([r.review_raw for r in splits.train], vocab), encode([r.aspect for r in splits.train], vocab, 12), torch.tensor([LABEL_TO_ID[r.label] for r in splits.train])), batch_size=batch_size, shuffle=True)
+    loader = DataLoader(
+        TensorDataset(
+            encode([row.review_raw for row in splits.train], vocab),
+            encode([row.aspect for row in splits.train], vocab, 12),
+            torch.tensor([LABEL_TO_ID[row.label] for row in splits.train]),
+        ),
+        batch_size=batch_size,
+        shuffle=True,
+    )
     optimiser = torch.optim.Adam(model.parameters(), lr=1e-3)
+    loss_function = torch.nn.CrossEntropyLoss()
     for _ in range(epochs):
         model.train()
         for review, aspect, label in loader:
-            optimiser.zero_grad(); loss=torch.nn.CrossEntropyLoss()(model(review, aspect), label); loss.backward(); optimiser.step()
-    inverse={value:key for key,value in LABEL_TO_ID.items()}
+            optimiser.zero_grad()
+            loss = loss_function(model(review, aspect), label)
+            loss.backward()
+            optimiser.step()
+
+    inverse = {value: key for key, value in LABEL_TO_ID.items()}
+
     def score(rows):
         model.eval()
-        with torch.no_grad(): predicted=model(encode([r.review_raw for r in rows],vocab),encode([r.aspect for r in rows],vocab,12)).argmax(1).tolist()
-        return compute_metrics([r.label for r in rows],[inverse[x] for x in predicted])
-    return model, vocab, {"development":score(splits.development),"test":score(splits.test)}
+        with torch.no_grad():
+            predicted = model(
+                encode([row.review_raw for row in rows], vocab),
+                encode([row.aspect for row in rows], vocab, 12),
+            ).argmax(1).tolist()
+        return compute_metrics([row.label for row in rows], [inverse[item] for item in predicted])
+
+    return model, vocab, {"development": score(splits.development), "test": score(splits.test)}
 
 
 def save_artifact(model, vocab, metrics, output_dir: Path = ABSA_OUTPUTS_DIR) -> None:
