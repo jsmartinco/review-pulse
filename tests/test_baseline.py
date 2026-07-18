@@ -142,11 +142,14 @@ def test_load_baseline_roundtrip(tmp_path):
 @pytest.mark.slow
 def test_baseline_real_data_accuracy():
     """Sanity check: baseline must exceed 80% accuracy on the real val split."""
-    from src.data.parser import load_all_domains
+    from src.data.parser import has_labeled_review_files, load_all_domains
     from src.data.preprocess import preprocess
     import tempfile
 
+    if not has_labeled_review_files():
+        pytest.skip("Legacy Amazon review data is not installed locally")
     raw = load_all_domains()
+    assert not raw.empty, "Legacy review files exist but the parser returned no records"
     train, val, _ = preprocess(raw)
 
     with tempfile.TemporaryDirectory() as tmp:
