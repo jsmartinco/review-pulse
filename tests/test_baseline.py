@@ -147,6 +147,8 @@ def test_baseline_real_data_accuracy():
     import tempfile
 
     raw = load_all_domains()
+    if raw.empty:
+        pytest.skip("Legacy Amazon review data is not installed locally")
     train, val, _ = preprocess(raw)
 
     with tempfile.TemporaryDirectory() as tmp:

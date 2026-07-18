@@ -70,33 +70,40 @@ def test_parse_multiple_reviews(tmp_path: Path) -> None:
 
 # --- integration tests against real data ---
 
+@pytest.fixture
+def legacy_dataset() -> pd.DataFrame:
+    dataset = load_all_domains()
+    if dataset.empty:
+        pytest.skip("Legacy Amazon review data is not installed locally")
+    return dataset
+
 def test_load_all_domains_returns_dataframe() -> None:
     df = load_all_domains()
     assert isinstance(df, pd.DataFrame)
 
 
-def test_load_all_domains_has_required_columns() -> None:
-    df = load_all_domains()
+def test_load_all_domains_has_required_columns(legacy_dataset: pd.DataFrame) -> None:
+    df = legacy_dataset
     assert set(df.columns) >= {"text", "rating", "label", "domain", "source_file"}
 
 
-def test_load_all_domains_four_domains() -> None:
-    df = load_all_domains()
+def test_load_all_domains_four_domains(legacy_dataset: pd.DataFrame) -> None:
+    df = legacy_dataset
     assert df["domain"].nunique() == 4
 
 
-def test_load_all_domains_binary_labels() -> None:
-    df = load_all_domains()
+def test_load_all_domains_binary_labels(legacy_dataset: pd.DataFrame) -> None:
+    df = legacy_dataset
     assert set(df["label"].unique()) == {0, 1}
 
 
-def test_load_all_domains_no_empty_text() -> None:
-    df = load_all_domains()
+def test_load_all_domains_no_empty_text(legacy_dataset: pd.DataFrame) -> None:
+    df = legacy_dataset
     assert df["text"].str.strip().ne("").all()
 
 
-def test_load_all_domains_count() -> None:
-    df = load_all_domains()
+def test_load_all_domains_count(legacy_dataset: pd.DataFrame) -> None:
+    df = legacy_dataset
     # 4 domains × 1,000 positive + 1,000 negative = 8,000
     assert len(df) >= 7_000  # lenient lower bound in case a few rows lack review_text
 

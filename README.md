@@ -184,17 +184,24 @@ metrics = run_evaluation(save_outputs=False)
 ## Run The App
 
 ```bash
-streamlit run app.py
+.venv/bin/streamlit run app.py
 ```
 
-The app lets the user:
+The landing page links to two deliberately separate workflows:
 
-- enter or generate a sample review;
-- choose Baseline, BiLSTM, or DistilBERT;
-- classify sentiment;
-- inspect the confidence and raw prediction payload.
+- **ReviewPulse v2.3.0 (ISY503):** binary sentiment for one complete Amazon review.
+- **ReviewPulse v3.0.0 (DLE602):** three-class sentiment for one or more manually supplied restaurant aspects.
 
-Model loading and availability checks live in `src/app/service.py`. `app.py` stays focused on UI.
+The v3 page includes mixed-polarity samples, supports the four-model comparison ladder and shows ATAE-LSTM token evidence only as indicative evidence, not model reasoning. SemEval Restaurants data and v3 artifacts are local inputs; a missing model is reported as a controlled application error rather than falling back to a v2 model.
+
+After preparing the local v3 artifacts, verify the ABSA path with:
+
+```bash
+.venv/bin/python -m pytest tests/absa -q
+.venv/bin/python scripts/smoke_absa.py
+```
+
+See `docs/dle602-a3/v3-smoke.md` for the required local artifacts and `docs/dle602-a3/semeval-restaurants.md` for data provenance.
 
 ## Inference API
 
@@ -241,8 +248,8 @@ pytest tests/
 
 Current status:
 
-- Fast suite: 194 passed, 5 deselected
-- Full suite: run before final submission or release if an exact count is needed
+- Full suite in the recorded v3 environment: 215 passed, 8 skipped.
+- Skips apply only when the optional, gitignored legacy Amazon dataset is absent.
 
 ## Documentation Map
 
@@ -256,6 +263,7 @@ Current status:
 - `docs/releaseNotes/v2.1.0.md` - refactor track release
 - `docs/releaseNotes/v2.2.0.md` - modular package release
 - `docs/releaseNotes/v2.3.0-draft.md` - compatibility wrapper removal draft
+- `docs/dle602-a3/` - v3 environment, SemEval provenance and smoke instructions
 
 ## Issue Creator (batch issue helper)
 

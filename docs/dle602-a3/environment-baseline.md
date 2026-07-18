@@ -28,17 +28,17 @@ The resolved package set is committed as `constraints-a3.txt`. It is the referen
 
 `scikit-learn==1.8.0` is intentional: the committed TF-IDF artifact was serialised with that version. Installing the open-ended requirement selected 1.9.0 and emitted an artifact-version warning.
 
-## Legacy fast-suite baseline
+## Legacy regression baseline
 
 Command:
 
 ```bash
-.venv/bin/python -m pytest tests/ -q -m "not slow"
+.venv/bin/python -m pytest -q
 ```
 
-Result: **189 passed, 5 failed, 5 deselected** in 23.96 seconds.
+Result after the v3 integration checks: **215 passed, 8 skipped**.
 
-The five failures are all in `tests/test_parser.py` and require the local Amazon `.review` files for Books, DVD, Electronics and Kitchen & Housewares. Those directories are intentionally gitignored and are absent in this clean clone. The failures are data-availability failures, not v3 regressions:
+The skipped cases require the local Amazon `.review` files for Books, DVD, Electronics and Kitchen & Housewares. Those directories are intentionally gitignored and are absent in a clean clone. They are data-availability skips, not v3 regressions:
 
 - `test_load_all_domains_has_required_columns`
 - `test_load_all_domains_four_domains`
@@ -46,7 +46,7 @@ The five failures are all in `tests/test_parser.py` and require the local Amazon
 - `test_load_all_domains_no_empty_text`
 - `test_load_all_domains_count`
 
-All test paths that do not require the uncommitted Amazon dataset pass. When those legacy data files are placed under `data/`, rerun the command above to compare against the repository's previously recorded target of `194 passed, 5 deselected`.
+All paths that do not require the uncommitted Amazon dataset pass. When those legacy data files are placed under `data/`, the corresponding checks run instead of skipping.
 
 ## Guardrails
 

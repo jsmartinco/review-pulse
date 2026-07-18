@@ -175,6 +175,8 @@ def test_train_real_data_one_epoch():
     from src.tokenization.vocab import save_vocab
 
     raw = load_all_domains()
+    if raw.empty:
+        pytest.skip("Legacy Amazon review data is not installed locally")
     train_df, val_df, _ = preprocess(raw)
     vocab = build_vocab(train_df["text"])
 

@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-st.set_page_config(page_title="ReviewPulse", page_icon="favicon.ico", layout="centered")
+st.set_page_config(page_title="ReviewPulse", page_icon="favicon.svg", layout="centered")
 
 st.sidebar.image("logo.png", width="content")
 

@@ -283,8 +283,11 @@ def test_error_analysis_no_write_when_save_path_none(monkeypatch, tmp_path):
 def test_run_evaluation_returns_metrics():
     """Full evaluation pipeline on real data."""
     import tempfile
+    from src.data.parser import load_all_domains
     from src.evaluation import run_evaluation
 
+    if load_all_domains().empty:
+        pytest.skip("Legacy Amazon review data is not installed locally")
     with tempfile.TemporaryDirectory() as tmp:
         result = run_evaluation(
             confusion_path=tmp + "/cm.png",
