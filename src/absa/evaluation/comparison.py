@@ -17,3 +17,9 @@ def build_comparison(output_dir: Path = ABSA_OUTPUTS_DIR) -> str:
     result = "\n".join(rows) + "\n"
     (output_dir / "four_model_comparison.md").write_text(result)
     return result
+
+
+def compare_prediction_sets(y_true: list[str], predictions: dict[str, list[str]]) -> dict[str, object]:
+    """Reserve a uniform evaluation surface for full and subset prediction runs."""
+    from .metrics import compute_metrics
+    return {name: compute_metrics(y_true, y_pred) for name, y_pred in predictions.items()}
