@@ -13,4 +13,4 @@ class TfidfAspectPredictor:
         probabilities = self.model.predict_proba([review])[0]
         labels = list(self.model.classes_)
         index = probabilities.argmax()
-        return {"aspect": aspect, "label": labels[index], "confidence": float(probabilities[index]), "model": model_name, "token_evidence": None}
+        return {"aspect": aspect, "label": str(labels[index]), "confidence": float(probabilities[index]), "model": model_name, "token_evidence": None}
