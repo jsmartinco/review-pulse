@@ -1,6 +1,5 @@
 """ReviewPulse project introduction and navigation landing page."""
 
-from PIL import Image
 import streamlit as st
 
 st.set_page_config(page_title="ReviewPulse", page_icon="favicon.ico", layout="centered")
@@ -8,7 +7,6 @@ st.set_page_config(page_title="ReviewPulse", page_icon="favicon.ico", layout="ce
 st.sidebar.image("logo.png", width="content")
 st.title("ReviewPulse")
 st.caption("A phased NLP and Deep Learning project · Torrens University Australia")
-st.image(Image.open("logo.png"), width=180)
 
 st.markdown("""
 ReviewPulse evolves deliberately across assessments: reusable engineering is retained, while each phase introduces a distinct learning task and evaluation contract. Use the sidebar to open either working application.
