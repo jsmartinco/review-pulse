@@ -16,5 +16,7 @@ data/books
 data/dvd
 data/electronics
 data/kitchen_&_housewares
+data/semeval2014/*
+!data/semeval2014/.gitkeep
 docs/other
 .pytest_cache/
