@@ -50,6 +50,17 @@ After preparation, verify that the local raw files still match the manifest:
 
 The generated `sha256.json` records SHA-256, byte count and original filename for both raw inputs. It is intentionally local because it describes the exact files the user acquired under the source terms. Record its two digests in the A3 experiment log before training.
 
+## Initial local audit (18 July 2026)
+
+Using the prepared `Restaurants_Train_v2.xml` and `Restaurants_Test_Gold.xml`, `python -m src.absa.data.audit` produced the following reproducible baseline. The generated `audit.json` stays local with the source XMLs.
+
+| Split | Aspect examples | Sentences with aspects | Positive | Negative | Neutral | Original conflict | Invalid offsets |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Train | 3,693 | 2,021 | 2,164 | 805 | 633 | 91 | 0 |
+| Test | 1,134 | 606 | 728 | 196 | 196 | 14 | 0 |
+
+The next data step excludes and reports the 105 original `conflict` examples for the core three-class task; it does not merge them with the mixed-polarity multi-aspect analysis subset.
+
 ## v3 label policy
 
 The parser in #77 will count all four original values. The core experiment retains only `negative`, `neutral` and `positive`, and reports excluded `conflict` rows separately. This is not the same as the **mixed-polarity multi-aspect subset**, which will be computed from sentences containing at least two retained aspects with different polarities.
