@@ -1,14 +1,11 @@
 """ISY503 legacy review-sentiment application."""
 
-from PIL import Image
 import streamlit as st
 
 from src.app.service import DISTILBERT_UNAVAILABLE_MSG, MODEL_OPTIONS, is_distilbert_available, warm_up_model
 from src.config import MODEL_DISTILBERT
 from src.app.samples import get_random_sample
 
-st.set_page_config(page_title="ReviewPulse v2.3.0", page_icon="favicon.ico", layout="centered")
-st.sidebar.image("logo.png", width="content")
 st.title("ReviewPulse v2.3.0")
 st.caption("ISY503 · binary sentiment for a complete Amazon product review")
 

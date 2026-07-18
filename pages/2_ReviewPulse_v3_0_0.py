@@ -5,8 +5,6 @@ import streamlit as st
 from src.absa.inference.api import predict_aspects
 from src.absa.inference.predictors import TfidfAspectPredictor
 
-st.set_page_config(page_title="ReviewPulse v3.0.0", page_icon="favicon.ico", layout="centered")
-st.sidebar.image("logo.png", width="content")
 st.title("ReviewPulse v3.0.0")
 st.caption("DLE602 · three-class aspect-based sentiment analysis")
 st.info("Enter one or more aspects manually. The current UI exposes the review-only TF-IDF baseline; aspect-conditioned models are evaluated in the experiment pipeline.")
