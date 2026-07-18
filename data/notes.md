@@ -1,4 +1,34 @@
-# Multi-Domain Sentiment Dataset
+# ReviewPulse data notes
+
+## DLE602 v3.0 — SemEval-2014 Task 4 Restaurants
+
+ReviewPulse v3 uses the **Restaurants** aspect-term polarity data from SemEval-2014 Task 4. This is a new ABSA task, separate from the Amazon binary review dataset below.
+
+- Official provenance and acquisition page: <https://alt.qcri.org/semeval2014/task4/index.php?id=data-and-tools>
+- Task definition: <https://alt.qcri.org/semeval2014/task4/>
+- Citation: Pontiki et al. (2014), <https://aclanthology.org/S14-2004/>
+- Core domain: Restaurants. Laptops is stretch-only.
+- Raw inputs remain local under `data/semeval2014/restaurants/` and are ignored by Git because the source page states fair-use and third-party provider terms rather than an open redistribution licence.
+
+Prepare user-obtained official XMLs and generate the local SHA-256 manifest:
+
+```bash
+.venv/bin/python scripts/prepare_semeval_restaurants.py \
+  --train /path/to/Restaurants_Train_v2.xml \
+  --test /path/to/Restaurants_Test_Gold.xml
+```
+
+Run the parser/offset audit:
+
+```bash
+.venv/bin/python -m src.absa.data.audit
+```
+
+See `docs/dle602-a3/semeval-restaurants.md` for the complete provenance, redistribution treatment, stable local layout and checksum verification.
+
+---
+
+## ISY503 v1.0/v2.x — Multi-Domain Sentiment Dataset
 This sentiment dataset was used in our paper:
 > John Blitzer, Mark Dredze, Fernando Pereira. Biographies, Bollywood, Boom-boxes and Blenders: Domain Adaptation for Sentiment Classification. Association of Computational Linguistics (ACL), 2007. [PDF](https://www.cs.jhu.edu/~mdredze/publications/sentiment_acl07.pdf)
 
