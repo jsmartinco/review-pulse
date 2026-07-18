@@ -1,5 +1,6 @@
 outputs/*.png
 outputs/*.csv
+outputs/absa/
 embeddings/
 favicon_io.zip
 __pycache__/
