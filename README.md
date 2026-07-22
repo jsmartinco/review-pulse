@@ -203,6 +203,15 @@ After preparing the local v3 artifacts, verify the ABSA path with:
 
 See `docs/dle602-a3/v3-smoke.md` for the required local artifacts, `docs/dle602-a3/semeval-restaurants.md` for data provenance and `docs/dle602-a3/training-protocol.md` for seed, early-stopping and best-checkpoint rules.
 
+Regenerate verified v3 artifacts and produce the common four-model A3 comparison with:
+
+```bash
+.venv/bin/python -m src.absa.training.runner --device auto
+.venv/bin/python -m src.absa.evaluation.runner --device auto
+```
+
+The evaluation rejects pre-#91 artifacts by default and writes metrics, shared predictions, efficiency evidence, error candidates and confusion matrices below `outputs/absa/evaluation/`. See `docs/dle602-a3/evaluation-protocol.md` for the measurement definitions and staged commands.
+
 ## Inference API
 
 ```python
