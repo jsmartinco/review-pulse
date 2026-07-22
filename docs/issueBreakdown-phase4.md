@@ -50,6 +50,8 @@ docs/dle602-a3/
 
 ## Ordered issue track
 
+PR #90 merged issues #73-#83 and #86-#87 into `main`. The remaining critical path, reconciled with the submitted A2 report, is `#91 -> #84 + #85 -> #88 -> #89`.
+
 | Order | Issue | Suggested short branch | Depends on | Exit evidence |
 |---:|---|---|---|---|
 | 1 | [#73](https://github.com/lfariabr/review-pulse/issues/73) environment + v2.3.0 baseline | `chore/v3-environment-baseline` | — | Constraints and legacy baseline recorded |
@@ -63,18 +65,17 @@ docs/dle602-a3/
 | 9 | [#81](https://github.com/lfariabr/review-pulse/issues/81) target-agnostic LSTM | `feat/absa-target-lstm` | #78, #79 | Three-logit checkpoint and history |
 | 10 | [#82](https://github.com/lfariabr/review-pulse/issues/82) ATAE-LSTM | `feat/absa-atae-lstm` | #78, #79, #81 | Aspect sensitivity and aligned attention |
 | 11 | [#83](https://github.com/lfariabr/review-pulse/issues/83) DistilBERT pair model | `feat/absa-distilbert` | #78, #79 | Pair checkpoint and common metrics |
-| 12 | [#84](https://github.com/lfariabr/review-pulse/issues/84) four-model comparison | `feat/absa-comparison` | #80–#83 | Tables, efficiency evidence and errors |
-| 13 | [#85](https://github.com/lfariabr/review-pulse/issues/85) token evidence | `feat/absa-token-evidence` | #82, #83 | Caveated aligned evidence |
-| 14 | [#86](https://github.com/lfariabr/review-pulse/issues/86) legacy/v3 app | `feat/app-absa-workflow` | #80–#85 | Ordered multi-aspect user flow |
-| 15 | [#87](https://github.com/lfariabr/review-pulse/issues/87) integration + clean load | `test/absa-integration` | #80–#86 | Legacy and v3 smoke coverage |
-| 16 | [#88](https://github.com/lfariabr/review-pulse/issues/88) report + results package | `docs/dle602-a3-report` | #84–#87 | Evidence-backed report draft |
-| 17 | [#89](https://github.com/lfariabr/review-pulse/issues/89) v3.0.0 release | `release/v3.0.0` | #87, #88 | Clean package, notes and tag |
+| 12 | [#91](https://github.com/lfariabr/review-pulse/issues/91) training reproducibility + regularisation | `fix/absa-training-reproducibility` | #81–#83 | Seeds, histories, early stopping and restored best checkpoints |
+| 13 | [#84](https://github.com/lfariabr/review-pulse/issues/84) four-model comparison | `feat/absa-comparison` | #80–#83, #91 | Tables, efficiency evidence and errors |
+| 14 | [#85](https://github.com/lfariabr/review-pulse/issues/85) token evidence | `feat/absa-token-evidence` | #82, #83 | Caveated aligned evidence |
+| 15 | [#86](https://github.com/lfariabr/review-pulse/issues/86) legacy/v3 app | `feat/app-absa-workflow` | #80–#85 | Ordered multi-aspect user flow |
+| 16 | [#87](https://github.com/lfariabr/review-pulse/issues/87) integration + clean load | `test/absa-integration` | #80–#86 | Legacy and v3 smoke coverage |
+| 17 | [#88](https://github.com/lfariabr/review-pulse/issues/88) report + results package | `docs/dle602-a3-report` | #84–#87, #91 | Evidence-backed report draft |
+| 18 | [#89](https://github.com/lfariabr/review-pulse/issues/89) v3.0.0 release | `release/v3.0.0` | #87, #88, #91 | Clean package, notes and tag |
 
 ## Branch and merge policy
 
-`feat/reviewpulse-v3-absa` is the long-lived **v3 integration branch**. Each issue branch starts from it, is validated independently, then merges back into it. Do not merge individual v3 issues into `main`.
-
-Open one final PR from `feat/reviewpulse-v3-absa` to `main` only after #87 and #88 are complete. This preserves a stable v2.3.0 `main` while the DLE602 implementation evolves.
+PR #90 completed the long-lived integration phase and established the v3 implementation baseline on `main`. Each remaining issue now starts from current `main`, receives focused validation and merges through its own reviewed pull request. Do not reuse or revive the merged integration branch.
 
 ## Verification commands
 

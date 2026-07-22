@@ -201,7 +201,7 @@ After preparing the local v3 artifacts, verify the ABSA path with:
 .venv/bin/python scripts/smoke_absa.py
 ```
 
-See `docs/dle602-a3/v3-smoke.md` for the required local artifacts and `docs/dle602-a3/semeval-restaurants.md` for data provenance.
+See `docs/dle602-a3/v3-smoke.md` for the required local artifacts, `docs/dle602-a3/semeval-restaurants.md` for data provenance and `docs/dle602-a3/training-protocol.md` for seed, early-stopping and best-checkpoint rules.
 
 ## Inference API
 
