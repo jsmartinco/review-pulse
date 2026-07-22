@@ -38,6 +38,7 @@ def train_atae_lstm(
         learning_rate=learning_rate,
         weight_decay=weight_decay,
         max_length=max_length,
+        patience=patience,
     )
     if aspect_max_length < 1:
         raise ValueError("aspect_max_length must be at least 1")

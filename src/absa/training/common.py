@@ -32,6 +32,7 @@ def validate_training_parameters(
     learning_rate: float,
     weight_decay: float,
     max_length: int,
+    patience: int = 2,
 ) -> None:
     """Fail early when a run configuration cannot produce a valid checkpoint."""
     if epochs < 1:
@@ -44,6 +45,8 @@ def validate_training_parameters(
         raise ValueError("weight_decay must be non-negative")
     if max_length < 1:
         raise ValueError("max_length must be at least 1")
+    if patience < 1:
+        raise ValueError("patience must be at least 1")
 
 
 @dataclass

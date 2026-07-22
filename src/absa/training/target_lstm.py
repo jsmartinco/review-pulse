@@ -39,6 +39,7 @@ def train_target_lstm(
         learning_rate=learning_rate,
         weight_decay=weight_decay,
         max_length=max_length,
+        patience=patience,
     )
     loader_generator = seed_everything(seed)
     splits = split_official_data(train_rows, test_rows, seed=seed)

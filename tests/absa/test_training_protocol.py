@@ -7,7 +7,9 @@ import torch
 
 from src.absa.data.schema import AspectExample
 from src.absa.labels import LABEL_TO_ID
+from src.absa.training import atae_lstm as atae_training
 from src.absa.training import distilbert as distilbert_training
+from src.absa.training import target_lstm as target_training
 from src.absa.training.atae_lstm import save_artifact as save_atae_artifact
 from src.absa.training.atae_lstm import train_atae_lstm
 from src.absa.training.common import (
@@ -53,9 +55,11 @@ def _tiny_rows() -> tuple[list[AspectExample], list[AspectExample]]:
 
 def test_seed_everything_reproduces_python_numpy_torch_and_loader_generator() -> None:
     first_generator = seed_everything(17)
-    first = (random.random(), np.random.random(), torch.rand(1), torch.rand(1, generator=first_generator))
+    first_python = random.random()  # noqa: S311 - deterministic non-cryptographic RNG test
+    first = (first_python, np.random.random(), torch.rand(1), torch.rand(1, generator=first_generator))
     second_generator = seed_everything(17)
-    second = (random.random(), np.random.random(), torch.rand(1), torch.rand(1, generator=second_generator))
+    second_python = random.random()  # noqa: S311 - deterministic non-cryptographic RNG test
+    second = (second_python, np.random.random(), torch.rand(1), torch.rand(1, generator=second_generator))
     assert first[0] == second[0]
     assert first[1] == second[1]
     assert torch.equal(first[2], second[2])
@@ -74,6 +78,55 @@ def test_best_checkpoint_stops_and_restores_selected_state() -> None:
     tracker.restore(model)
     assert model.weight.item() == 1
     assert tracker.best_epoch == 1
+
+
+class _RecordingBestCheckpoint(BestCheckpoint):
+    latest = None
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.selected_state = None
+        self.restore_calls = 0
+        _RecordingBestCheckpoint.latest = self
+
+    def update(self, model: torch.nn.Module, score: float, epoch: int) -> bool:
+        previous_best = self.best_epoch
+        should_stop = super().update(model, score, epoch)
+        if self.best_epoch != previous_best:
+            self.selected_state = {
+                name: value.detach().cpu().clone()
+                for name, value in model.state_dict().items()
+            }
+        return should_stop
+
+    def restore(self, model: torch.nn.Module) -> None:
+        super().restore(model)
+        self.restore_calls += 1
+
+
+def _controlled_metrics(scores: list[float]):
+    remaining = iter(scores)
+    calls = 0
+
+    def compute(_labels, _predictions):
+        nonlocal calls
+        calls += 1
+        tracker = _RecordingBestCheckpoint.latest
+        if calls > 3:
+            assert tracker is not None
+            assert tracker.restore_calls == 1
+        return {"macro_f1": next(remaining)}
+
+    return compute
+
+
+def _assert_state_matches_selected(model, selected_state) -> None:
+    assert selected_state is not None
+    assert model.state_dict().keys() == selected_state.keys()
+    assert all(
+        torch.equal(model.state_dict()[name].detach().cpu(), selected_state[name])
+        for name in selected_state
+    )
 
 
 def test_training_diagnostic_recommends_multi_seed_only_for_material_overfitting() -> None:
@@ -102,6 +155,20 @@ def test_invalid_training_parameters_fail_before_a_run_starts() -> None:
         assert "epochs" in str(error)
     else:
         raise AssertionError("A run without epochs cannot select a checkpoint")
+
+    try:
+        validate_training_parameters(
+            epochs=1,
+            batch_size=8,
+            learning_rate=1e-3,
+            weight_decay=0,
+            max_length=80,
+            patience=0,
+        )
+    except ValueError as error:
+        assert "patience" in str(error)
+    else:
+        raise AssertionError("Invalid patience must fail before training setup")
 
 
 def test_recurrent_trainers_return_and_persist_reproducibility_metadata(tmp_path) -> None:
@@ -135,6 +202,44 @@ def test_recurrent_trainers_return_and_persist_reproducibility_metadata(tmp_path
         assert checkpoint["best_epoch"] == result["best_epoch"]
         assert checkpoint["config"]["seed"] == 9
         assert persisted["history"] == result["history"]
+
+
+def test_recurrent_trainers_restore_early_winner_before_evaluation_and_saving(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    train_rows, test_rows = _tiny_rows()
+    trainers = (
+        (target_training, train_target_lstm, save_target_artifact, "target_lstm.pt"),
+        (atae_training, train_atae_lstm, save_atae_artifact, "atae_lstm.pt"),
+    )
+
+    for module, trainer, saver, checkpoint_name in trainers:
+        monkeypatch.setattr(module, "BestCheckpoint", _RecordingBestCheckpoint)
+        monkeypatch.setattr(module, "compute_metrics", _controlled_metrics([0.9, 0.8, 0.7, 0.9, 0.5]))
+        model, vocab, result = trainer(
+            train_rows,
+            test_rows,
+            epochs=4,
+            batch_size=2,
+            seed=31,
+            patience=2,
+            max_length=8,
+        )
+        tracker = _RecordingBestCheckpoint.latest
+        assert tracker is not None
+        assert result["best_epoch"] == 1
+        assert result["stopped_early"] is True
+        assert tracker.restore_calls == 1
+        _assert_state_matches_selected(model, tracker.selected_state)
+
+        output_dir = tmp_path / result["config"]["model"]
+        saver(model, vocab, result, output_dir)
+        saved = torch.load(output_dir / checkpoint_name, weights_only=True)
+        assert all(
+            torch.equal(saved["state_dict"][name], tracker.selected_state[name])
+            for name in tracker.selected_state
+        )
 
 
 class _TinyPairDataset(torch.utils.data.Dataset):
@@ -225,3 +330,46 @@ def test_distilbert_training_is_seeded_and_records_complete_run_config(monkeypat
     run_record = json.loads((output_dir / "distilbert" / "training_run.json").read_text())
     assert run_record["config"] == first["config"]
     assert run_record["history"] == first["history"]
+
+
+def test_distilbert_restores_early_winner_before_evaluation_and_saving(monkeypatch, tmp_path) -> None:
+    train_rows, test_rows = _tiny_rows()
+    monkeypatch.setattr(distilbert_training, "AspectPairDataset", _TinyPairDataset)
+    monkeypatch.setattr(distilbert_training, "ABSADistilBERT", _TinyDistilBertFactory)
+    monkeypatch.setattr(distilbert_training, "BestCheckpoint", _RecordingBestCheckpoint)
+    monkeypatch.setattr(
+        distilbert_training.AutoTokenizer,
+        "from_pretrained",
+        lambda _model_name: _TinyTokenizer(),
+    )
+    monkeypatch.setattr(
+        distilbert_training,
+        "compute_metrics",
+        _controlled_metrics([0.9, 0.8, 0.7, 0.9, 0.5]),
+    )
+
+    model, tokenizer, result = distilbert_training.train_distilbert(
+        train_rows,
+        test_rows,
+        epochs=4,
+        batch_size=2,
+        seed=37,
+        patience=2,
+        max_length=16,
+        model_name="tiny-distilbert",
+        device=torch.device("cpu"),
+    )
+    tracker = _RecordingBestCheckpoint.latest
+    assert tracker is not None
+    assert result["best_epoch"] == 1
+    assert result["stopped_early"] is True
+    assert tracker.restore_calls == 1
+    _assert_state_matches_selected(model, tracker.selected_state)
+
+    output_dir = tmp_path / "distilbert-restored"
+    distilbert_training.save_artifact(model, tokenizer, result, output_dir)
+    saved_state = torch.load(output_dir / "distilbert" / "model.pt", weights_only=True)
+    assert all(
+        torch.equal(saved_state[name], tracker.selected_state[name])
+        for name in tracker.selected_state
+    )
