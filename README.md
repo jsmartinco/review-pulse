@@ -257,7 +257,7 @@ pytest tests/
 
 Current status:
 
-- Full suite in the recorded v3 environment: 230 passed, 8 skipped.
+- Full suite in the recorded v3 environment: 233 passed, 8 skipped.
 - Skips apply only when the optional, gitignored legacy Amazon dataset is absent.
 
 ## Documentation Map

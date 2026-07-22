@@ -24,6 +24,16 @@ from .target_lstm import train_target_lstm
 
 
 MODEL_ORDER = ("tfidf", "target_lstm", "atae_lstm", "distilbert")
+REQUIRED_PROVENANCE_FIELDS = frozenset(
+    {
+        "git_commit",
+        "generated_at_utc",
+        "train_file",
+        "train_sha256",
+        "test_file",
+        "test_sha256",
+    }
+)
 
 
 def _sha256(path: Path) -> str:
@@ -63,6 +73,19 @@ def _record(metrics: dict[str, object], provenance: dict[str, object]) -> dict[s
     return metrics
 
 
+def _validate_provenance(
+    provenance: dict[str, object] | None,
+) -> dict[str, object]:
+    missing = sorted(
+        field
+        for field in REQUIRED_PROVENANCE_FIELDS
+        if not provenance or not provenance.get(field)
+    )
+    if missing:
+        raise ValueError(f"Missing artifact provenance fields: {missing}")
+    return dict(provenance)
+
+
 def train_models(
     train_rows,
     test_rows,
@@ -82,11 +105,8 @@ def train_models(
     invalid = sorted(set(models) - set(MODEL_ORDER))
     if invalid:
         raise ValueError(f"Unknown training models: {invalid}")
+    common_provenance = _validate_provenance(provenance)
     output_dir.mkdir(parents=True, exist_ok=True)
-    common_provenance = provenance or {
-        "git_commit": _git_commit(),
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-    }
     completed: dict[str, dict[str, object]] = {}
 
     if "tfidf" in models:

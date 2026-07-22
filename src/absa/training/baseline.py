@@ -1,14 +1,12 @@
 """Train and persist the v3 review-only TF-IDF baseline."""
 
-import argparse
 import json
 from pathlib import Path
 from time import perf_counter
 
 import joblib
 
-from ..config import ABSA_DATA_DIR, ABSA_OUTPUTS_DIR
-from ..data.parser import parse_aspect_examples
+from ..config import ABSA_OUTPUTS_DIR
 from ..data.splits import split_official_data
 from ..evaluation.metrics import compute_metrics
 from ..models.baseline import build_baseline
@@ -52,13 +50,10 @@ def save_artifact(model, metrics, output_dir: Path = ABSA_OUTPUTS_DIR) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--output-dir", type=Path, default=ABSA_OUTPUTS_DIR)
-    args = parser.parse_args()
-    root = ABSA_DATA_DIR / "restaurants"
-    model, metrics = train_baseline(parse_aspect_examples(root / "restaurants_train.xml", "train"), parse_aspect_examples(root / "restaurants_test.xml", "test"))
-    save_artifact(model, metrics, args.output_dir)
-    print(json.dumps(metrics, indent=2))
+    raise SystemExit(
+        "Standalone baseline training cannot produce a verified v3 artifact. "
+        "Use `python -m src.absa.training.runner --models tfidf` instead."
+    )
 
 
 if __name__ == "__main__":

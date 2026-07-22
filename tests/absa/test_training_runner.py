@@ -1,5 +1,9 @@
+from unittest.mock import Mock
+
+import pytest
 import torch
 
+from src.absa.training import baseline as baseline_training
 from src.absa.training import runner as training_runner
 
 
@@ -55,7 +59,14 @@ def test_training_runner_saves_all_models_with_shared_provenance(monkeypatch, tm
         lambda _model, _tokenizer, metrics, _output: saved.update(distilbert=metrics),
     )
 
-    provenance = {"git_commit": "abc123", "test_sha256": "fixture"}
+    provenance = {
+        "git_commit": "abc123",
+        "generated_at_utc": "2026-07-23T00:00:00+00:00",
+        "train_file": "restaurants_train.xml",
+        "train_sha256": "train-fixture",
+        "test_file": "restaurants_test.xml",
+        "test_sha256": "test-fixture",
+    }
     completed = training_runner.train_models(
         [object()],
         [object()],
@@ -76,3 +87,40 @@ def test_training_runner_rejects_unknown_model_before_training(tmp_path) -> None
         assert "cnn" in str(error)
     else:
         raise AssertionError("Unknown models must not silently enter the comparison")
+
+
+@pytest.mark.parametrize(
+    "provenance",
+    [
+        None,
+        {"git_commit": "abc123", "generated_at_utc": ""},
+    ],
+)
+def test_training_runner_rejects_incomplete_provenance_before_training(
+    monkeypatch,
+    tmp_path,
+    provenance,
+) -> None:
+    trainer = Mock()
+    saver = Mock()
+    monkeypatch.setattr(training_runner, "train_baseline", trainer)
+    monkeypatch.setattr(training_runner, "save_baseline", saver)
+    output_dir = tmp_path / "artifacts"
+
+    with pytest.raises(ValueError, match="Missing artifact provenance fields"):
+        training_runner.train_models(
+            [],
+            [],
+            output_dir,
+            models=("tfidf",),
+            provenance=provenance,
+        )
+
+    trainer.assert_not_called()
+    saver.assert_not_called()
+    assert not output_dir.exists()
+
+
+def test_standalone_baseline_directs_users_to_verified_runner() -> None:
+    with pytest.raises(SystemExit, match="src.absa.training.runner --models tfidf"):
+        baseline_training.main()
