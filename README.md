@@ -203,6 +203,15 @@ After preparing the local v3 artifacts, verify the ABSA path with:
 
 See `docs/dle602-a3/v3-smoke.md` for the required local artifacts, `docs/dle602-a3/semeval-restaurants.md` for data provenance and `docs/dle602-a3/training-protocol.md` for seed, early-stopping and best-checkpoint rules.
 
+Regenerate verified v3 artifacts and produce the common four-model A3 comparison with:
+
+```bash
+.venv/bin/python -m src.absa.training.runner --device auto
+.venv/bin/python -m src.absa.evaluation.runner --device auto
+```
+
+The evaluation rejects pre-#91 artifacts by default and writes metrics, shared predictions, efficiency evidence, error candidates and confusion matrices below `outputs/absa/evaluation/`. See `docs/dle602-a3/evaluation-protocol.md` for the measurement definitions and staged commands.
+
 ## Inference API
 
 ```python
@@ -248,7 +257,7 @@ pytest tests/
 
 Current status:
 
-- Full suite in the recorded v3 environment: 217 passed, 8 skipped.
+- Full suite in the recorded v3 environment: 233 passed, 8 skipped.
 - Skips apply only when the optional, gitignored legacy Amazon dataset is absent.
 
 ## Documentation Map
@@ -262,7 +271,8 @@ Current status:
 - `docs/releaseNotes/v2.0.0.md` - DistilBERT release
 - `docs/releaseNotes/v2.1.0.md` - refactor track release
 - `docs/releaseNotes/v2.2.0.md` - modular package release
-- `docs/releaseNotes/v2.3.0-draft.md` - compatibility wrapper removal draft
+- `docs/releaseNotes/v2.3.0.md` - compatibility wrapper removal release
+- `docs/releaseNotes/v3.0.0.md` - consolidated v3 delivery status and release gates
 - `docs/dle602-a3/` - v3 environment, SemEval provenance and smoke instructions
 
 ## Issue Creator (batch issue helper)

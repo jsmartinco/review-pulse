@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from time import perf_counter
 
 import torch
 from torch.utils.data import DataLoader, TensorDataset
@@ -73,6 +74,7 @@ def train_target_lstm(
     checkpoint = BestCheckpoint(patience=patience)
     history: list[dict[str, float | int]] = []
     stopped_early = False
+    training_started = perf_counter()
     for epoch in range(1, epochs + 1):
         model.train()
         epoch_loss = 0.0
@@ -93,6 +95,7 @@ def train_target_lstm(
         if checkpoint.update(model, float(development["macro_f1"]), epoch):
             stopped_early = epoch < epochs
             break
+    training_seconds = perf_counter() - training_started
 
     checkpoint.restore(model)
     development = score(splits.development)
@@ -117,6 +120,7 @@ def train_target_lstm(
         checkpoint=checkpoint,
         config=config,
         stopped_early=stopped_early,
+        training_seconds=training_seconds,
     )
 
 

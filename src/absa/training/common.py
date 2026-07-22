@@ -118,6 +118,7 @@ def build_run_result(
     checkpoint: BestCheckpoint,
     config: dict[str, object],
     stopped_early: bool,
+    training_seconds: float,
 ) -> dict[str, object]:
     """Build the JSON-safe training record shared by all neural models."""
     if checkpoint.best_epoch is None:
@@ -131,6 +132,7 @@ def build_run_result(
         "selection_metric": "development_macro_f1",
         "best_development_macro_f1": checkpoint.best_score,
         "stopped_early": stopped_early,
+        "training_seconds": training_seconds,
         "overfitting_diagnostic": training_diagnostic(history),
     }
 
@@ -144,6 +146,7 @@ def checkpoint_metadata(run_result: dict[str, object]) -> dict[str, object]:
         "selection_metric",
         "best_development_macro_f1",
         "stopped_early",
+        "training_seconds",
         "overfitting_diagnostic",
     )
     return {key: run_result[key] for key in keys}
