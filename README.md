@@ -257,7 +257,7 @@ pytest tests/
 
 Current status:
 
-- Full suite in the recorded v3 environment: 217 passed, 8 skipped.
+- Full suite in the recorded v3 environment: 230 passed, 8 skipped.
 - Skips apply only when the optional, gitignored legacy Amazon dataset is absent.
 
 ## Documentation Map
@@ -271,7 +271,8 @@ Current status:
 - `docs/releaseNotes/v2.0.0.md` - DistilBERT release
 - `docs/releaseNotes/v2.1.0.md` - refactor track release
 - `docs/releaseNotes/v2.2.0.md` - modular package release
-- `docs/releaseNotes/v2.3.0-draft.md` - compatibility wrapper removal draft
+- `docs/releaseNotes/v2.3.0.md` - compatibility wrapper removal release
+- `docs/releaseNotes/v3.0.0.md` - consolidated v3 delivery status and release gates
 - `docs/dle602-a3/` - v3 environment, SemEval provenance and smoke instructions
 
 ## Issue Creator (batch issue helper)
