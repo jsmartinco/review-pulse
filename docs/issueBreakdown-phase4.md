@@ -50,7 +50,7 @@ docs/dle602-a3/
 
 ## Ordered issue track
 
-PR #90 merged issues #73-#83 and #86-#87 into `main`. The remaining critical path, reconciled with the submitted A2 report, is `#91 -> #84 + #85 -> #88 -> #89`.
+PR #90 merged issues #73-#83 and #86-#87 into `main`; #91 and #84 are also complete. The remaining core critical path, reconciled with the submitted A2 report, is `#85 -> #88 -> #89`.
 
 | Order | Issue | Suggested short branch | Depends on | Exit evidence |
 |---:|---|---|---|---|
