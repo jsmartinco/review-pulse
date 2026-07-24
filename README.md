@@ -192,16 +192,17 @@ The landing page links to two deliberately separate workflows:
 - **ReviewPulse v2.3.0 (ISY503):** binary sentiment for one complete Amazon review.
 - **ReviewPulse v3.0.0 (DLE602):** three-class sentiment for one or more manually supplied restaurant aspects.
 
-The v3 page includes mixed-polarity samples, supports the four-model comparison ladder and shows ATAE-LSTM token evidence only as indicative evidence, not model reasoning. SemEval Restaurants data and v3 artifacts are local inputs; a missing model is reported as a controlled application error rather than falling back to a v2 model.
+The v3 page includes mixed-polarity samples, supports the four-model comparison ladder and shows aligned ATAE-LSTM attention or DistilBERT gradient × input attribution only as indicative evidence, not model reasoning. TF-IDF and the target-agnostic LSTM explicitly report token evidence as unsupported. SemEval Restaurants data and v3 artifacts are local inputs; a missing model is reported as a controlled application error rather than falling back to a v2 model.
 
 After preparing the local v3 artifacts, verify the ABSA path with:
 
 ```bash
 .venv/bin/python -m pytest tests/absa -q
 .venv/bin/python scripts/smoke_absa.py
+.venv/bin/python scripts/export_absa_evidence.py
 ```
 
-See `docs/dle602-a3/v3-smoke.md` for the required local artifacts, `docs/dle602-a3/semeval-restaurants.md` for data provenance and `docs/dle602-a3/training-protocol.md` for seed, early-stopping and best-checkpoint rules.
+See `docs/dle602-a3/v3-smoke.md` for the required local artifacts, `docs/dle602-a3/semeval-restaurants.md` for data provenance, `docs/dle602-a3/training-protocol.md` for seed, early-stopping and best-checkpoint rules, and `docs/dle602-a3/token-evidence.md` for the RQ3 methods and limitations.
 
 Regenerate verified v3 artifacts and produce the common four-model A3 comparison with:
 
@@ -257,7 +258,7 @@ pytest tests/
 
 Current status:
 
-- Full suite in the recorded v3 environment: 233 passed, 8 skipped.
+- Full suite on the #85 candidate branch: 243 passed, 8 skipped.
 - Skips apply only when the optional, gitignored legacy Amazon dataset is absent.
 
 ## Documentation Map

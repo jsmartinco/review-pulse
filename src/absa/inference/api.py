@@ -16,7 +16,6 @@ def normalise_aspects(aspects: list[str]) -> list[str]:
 
 
 def predict_aspects(review: str, aspects: list[str], model_name: str, predictor) -> list[dict]:
-    cleaned_review = review.strip()
-    if not cleaned_review:
+    if not review.strip():
         raise ValueError("Review must not be empty")
-    return [predictor.predict(cleaned_review, aspect, model_name) for aspect in normalise_aspects(aspects)]
+    return [predictor.predict(review, aspect, model_name) for aspect in normalise_aspects(aspects)]

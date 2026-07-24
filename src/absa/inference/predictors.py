@@ -7,13 +7,21 @@ import torch
 from transformers import AutoTokenizer
 
 from ..config import ABSA_OUTPUTS_DIR
-from ..interpretability.attention import EVIDENCE_CAVEAT, align_attention
+from ..interpretability.attention import align_attention
+from ..interpretability.attribution import gradient_x_input_attribution
+from ..interpretability.evidence import (
+    ATTENTION_LIMITATIONS,
+    ATTENTION_METHOD,
+    ATTRIBUTION_LIMITATIONS,
+    ATTRIBUTION_METHOD,
+    supported_evidence,
+    unsupported_evidence,
+)
 from ..labels import ID_TO_LABEL
 from ..models.atae_lstm import ATAELSTM
 from ..models.distilbert import ABSADistilBERT
 from ..models.target_lstm import TargetAgnosticLSTM
 from ..tokenization.sequence import encode
-from ..tokenization.transformer import encode_review_aspect_pairs
 
 
 MODEL_OPTIONS = {
@@ -24,7 +32,7 @@ MODEL_OPTIONS = {
 }
 
 
-def _payload(aspect: str, logits: torch.Tensor, model_name: str, token_evidence=None) -> dict:
+def _payload(aspect: str, logits: torch.Tensor, model_name: str, token_evidence: dict) -> dict:
     probabilities = torch.softmax(logits, dim=-1)[0]
     index = int(probabilities.argmax())
     return {
@@ -44,7 +52,13 @@ class TfidfAspectPredictor:
         probabilities = self.model.predict_proba([review])[0]
         labels = list(self.model.classes_)
         index = probabilities.argmax()
-        return {"aspect": aspect, "label": str(labels[index]), "confidence": float(probabilities[index]), "model": model_name, "token_evidence": None}
+        return {
+            "aspect": aspect,
+            "label": str(labels[index]),
+            "confidence": float(probabilities[index]),
+            "model": model_name,
+            "token_evidence": unsupported_evidence(MODEL_OPTIONS[model_name]),
+        }
 
 
 class TargetLstmAspectPredictor:
@@ -57,7 +71,13 @@ class TargetLstmAspectPredictor:
 
     def predict(self, review: str, aspect: str, model_name: str) -> dict:
         with torch.no_grad():
-            return _payload(aspect, self.model(encode([review], self.vocab)), model_name)
+            logits = self.model(encode([review], self.vocab))
+        return _payload(
+            aspect,
+            logits,
+            model_name,
+            unsupported_evidence(MODEL_OPTIONS[model_name]),
+        )
 
 
 class AtaeLstmAspectPredictor:
@@ -70,8 +90,18 @@ class AtaeLstmAspectPredictor:
 
     def predict(self, review: str, aspect: str, model_name: str) -> dict:
         with torch.no_grad():
-            logits, weights = self.model(encode([review], self.vocab), encode([aspect], self.vocab, 12), return_attention=True)
-        return _payload(aspect, logits, model_name, {"tokens": align_attention(review, weights[0]), "caveat": EVIDENCE_CAVEAT})
+            logits, weights = self.model(
+                encode([review], self.vocab),
+                encode([aspect], self.vocab, 12),
+                return_attention=True,
+            )
+        evidence = supported_evidence(
+            aspect=aspect,
+            method=ATTENTION_METHOD,
+            tokens=align_attention(review, weights[0]),
+            limitations=ATTENTION_LIMITATIONS,
+        )
+        return _payload(aspect, logits, model_name, evidence)
 
 
 class DistilBertAspectPredictor:
@@ -81,9 +111,19 @@ class DistilBertAspectPredictor:
         self.model.eval()
 
     def predict(self, review: str, aspect: str, model_name: str) -> dict:
-        encoded = encode_review_aspect_pairs(self.tokenizer, [review], [aspect])
-        with torch.no_grad():
-            return _payload(aspect, self.model(**encoded).logits, model_name)
+        logits, tokens = gradient_x_input_attribution(
+            self.model,
+            self.tokenizer,
+            review,
+            aspect,
+        )
+        evidence = supported_evidence(
+            aspect=aspect,
+            method=ATTRIBUTION_METHOD,
+            tokens=tokens,
+            limitations=ATTRIBUTION_LIMITATIONS,
+        )
+        return _payload(aspect, logits, model_name, evidence)
 
 
 def get_predictor(model_name: str):
