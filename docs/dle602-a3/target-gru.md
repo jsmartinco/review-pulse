@@ -64,6 +64,24 @@ outputs/absa/target_gru_metrics.json
 
 `load_target_gru_evaluator()` exposes the same `LoadedEvaluator` contract used by the core models. Full-test and mixed-polarity metrics therefore use the existing label order, subset definition and metric functions; the supplemental multi-model files remain deferred to #96.
 
+## Verified #94 candidate run
+
+The clean-load candidate was trained on CPU with seed 42 from commit `bdea54d`, using the same Restaurants checksums, official 1,120-example test set and 228-example mixed-polarity subset as #84. Best development macro-F1 occurred at epoch 8. No material overfitting was detected and the recorded diagnostic does not recommend a multi-seed contingency.
+
+| Measure | Target LSTM #84 | Target GRU #94 |
+|---|---:|---:|
+| Full-test accuracy | 0.6688 | **0.6750** |
+| Full-test macro-F1 | 0.4326 | **0.4603** |
+| Mixed accuracy | **0.4167** | 0.4079 |
+| Mixed macro-F1 | **0.3264** | 0.3156 |
+| CPU training time | 9.32 s | **7.66 s** |
+| Parameters | 571,291 | **512,411** |
+| Artifact size | 2.25 MB | **2.02 MB** |
+
+At matched dimensions, the GRU used 10.31% fewer parameters, produced a 9.99% smaller artifact and trained 17.83% faster in the recorded runs. Its overall metrics were slightly stronger, but its mixed-polarity metrics were slightly weaker. This is a useful negative boundary rather than a contradiction: changing the recurrent cell does not solve the missing-aspect limitation shared by both review-only models.
+
+The LSTM and GRU candidate artifacts were generated from different reviewed source commits because the GRU did not exist in the #84 commit. The final supplemental comparison in #96 must regenerate all six artifacts from one frozen commit before using cross-model timing as a final report claim.
+
 ## Reporting guardrails
 
 - Label GRU results exploratory.
