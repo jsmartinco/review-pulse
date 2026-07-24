@@ -213,6 +213,15 @@ Regenerate verified v3 artifacts and produce the common four-model A3 comparison
 
 The evaluation rejects pre-#91 artifacts by default and writes metrics, shared predictions, efficiency evidence, error candidates and confusion matrices below `outputs/absa/evaluation/`. See `docs/dle602-a3/evaluation-protocol.md` for the measurement definitions and staged commands.
 
+The optional GRU candidate remains outside those canonical four-model outputs. Train and smoke it independently with:
+
+```bash
+.venv/bin/python -m src.absa.training.runner --models target_gru --device cpu
+.venv/bin/python scripts/smoke_target_gru.py
+```
+
+Its matched LSTM controls, deliberate differences and reporting guardrails are documented in `docs/dle602-a3/target-gru.md`. Supplemental six-model integration is deferred to issue #96.
+
 ## Inference API
 
 ```python
@@ -258,7 +267,7 @@ pytest tests/
 
 Current status:
 
-- Full suite on the #85 candidate branch: 243 passed, 8 skipped.
+- Full suite on the #94 candidate branch: 250 passed, 8 skipped.
 - Skips apply only when the optional, gitignored legacy Amazon dataset is absent.
 
 ## Documentation Map

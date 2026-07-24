@@ -1,6 +1,6 @@
 # ReviewPulse v3 neural training protocol
 
-This protocol is the experiment contract for ReviewPulse v3. It applies to the target-agnostic LSTM, ATAE-LSTM and DistilBERT sentence-pair models before the four-model comparison in issue #84.
+This protocol is the experiment contract for ReviewPulse v3. It applies to the target-agnostic LSTM, ATAE-LSTM and DistilBERT sentence-pair models in the four-model comparison, and to the optional target-agnostic GRU in issue #94.
 
 ## Reproducibility controls
 

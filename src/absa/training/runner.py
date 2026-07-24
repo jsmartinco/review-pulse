@@ -21,9 +21,13 @@ from .distilbert import preferred_device, save_artifact as save_distilbert
 from .distilbert import train_distilbert
 from .target_lstm import save_artifact as save_target_lstm
 from .target_lstm import train_target_lstm
+from .target_gru import save_artifact as save_target_gru
+from .target_gru import train_target_gru
 
 
 MODEL_ORDER = ("tfidf", "target_lstm", "atae_lstm", "distilbert")
+OPTIONAL_MODEL_ORDER = ("target_gru",)
+AVAILABLE_MODELS = MODEL_ORDER + OPTIONAL_MODEL_ORDER
 REQUIRED_PROVENANCE_FIELDS = frozenset(
     {
         "git_commit",
@@ -102,7 +106,7 @@ def train_models(
     provenance: dict[str, object] | None = None,
 ) -> dict[str, dict[str, object]]:
     """Train selected models and save only artifacts carrying the #91 record."""
-    invalid = sorted(set(models) - set(MODEL_ORDER))
+    invalid = sorted(set(models) - set(AVAILABLE_MODELS))
     if invalid:
         raise ValueError(f"Unknown training models: {invalid}")
     common_provenance = _validate_provenance(provenance)
@@ -125,6 +129,18 @@ def train_models(
         )
         completed["target_lstm"] = _record(metrics, common_provenance)
         save_target_lstm(model, vocab, completed["target_lstm"], output_dir)
+
+    if "target_gru" in models:
+        model, vocab, metrics = train_target_gru(
+            train_rows,
+            test_rows,
+            epochs=lstm_epochs,
+            batch_size=recurrent_batch_size,
+            seed=seed,
+            patience=patience,
+        )
+        completed["target_gru"] = _record(metrics, common_provenance)
+        save_target_gru(model, vocab, completed["target_gru"], output_dir)
 
     if "atae_lstm" in models:
         model, vocab, metrics = train_atae_lstm(
@@ -167,7 +183,7 @@ def main() -> None:
     parser.add_argument(
         "--models",
         nargs="+",
-        choices=MODEL_ORDER,
+        choices=AVAILABLE_MODELS,
         default=list(MODEL_ORDER),
     )
     parser.add_argument("--seed", type=int, default=42)
