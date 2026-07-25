@@ -89,6 +89,50 @@ def test_training_runner_rejects_unknown_model_before_training(tmp_path) -> None
         raise AssertionError("Unknown models must not silently enter the comparison")
 
 
+def test_training_runner_supports_gru_without_widening_core_default(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    saved = {}
+    monkeypatch.setattr(
+        training_runner,
+        "train_target_gru",
+        lambda *_args, **_kwargs: (
+            object(),
+            {"token": 1},
+            _metrics("target_gru"),
+        ),
+    )
+    monkeypatch.setattr(
+        training_runner,
+        "save_target_gru",
+        lambda _model, _vocab, metrics, _output: saved.update(gru=metrics),
+    )
+    provenance = {
+        "git_commit": "abc123",
+        "generated_at_utc": "2026-07-25T00:00:00+10:00",
+        "train_file": "restaurants_train.xml",
+        "train_sha256": "train-fixture",
+        "test_file": "restaurants_test.xml",
+        "test_sha256": "test-fixture",
+    }
+    completed = training_runner.train_models(
+        [object()],
+        [object()],
+        tmp_path,
+        models=("target_gru",),
+        provenance=provenance,
+    )
+    assert training_runner.MODEL_ORDER == (
+        "tfidf",
+        "target_lstm",
+        "atae_lstm",
+        "distilbert",
+    )
+    assert completed.keys() == {"target_gru"}
+    assert saved["gru"]["provenance"] == provenance
+
+
 @pytest.mark.parametrize(
     "provenance",
     [

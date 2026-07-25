@@ -9,6 +9,7 @@ from src.absa.data.schema import AspectExample
 from src.absa.labels import LABEL_TO_ID
 from src.absa.training import atae_lstm as atae_training
 from src.absa.training import distilbert as distilbert_training
+from src.absa.training import target_gru as gru_training
 from src.absa.training import target_lstm as target_training
 from src.absa.training.atae_lstm import save_artifact as save_atae_artifact
 from src.absa.training.atae_lstm import train_atae_lstm
@@ -20,6 +21,8 @@ from src.absa.training.common import (
 )
 from src.absa.training.target_lstm import save_artifact as save_target_artifact
 from src.absa.training.target_lstm import train_target_lstm
+from src.absa.training.target_gru import save_artifact as save_gru_artifact
+from src.absa.training.target_gru import train_target_gru
 
 
 def _row(sentence_id: str, review: str, aspect: str, label: str, source: str) -> AspectExample:
@@ -175,6 +178,7 @@ def test_recurrent_trainers_return_and_persist_reproducibility_metadata(tmp_path
     train_rows, test_rows = _tiny_rows()
     trainers = (
         (train_target_lstm, save_target_artifact, "target_lstm.pt", "target_lstm_metrics.json"),
+        (train_target_gru, save_gru_artifact, "target_gru.pt", "target_gru_metrics.json"),
         (train_atae_lstm, save_atae_artifact, "atae_lstm.pt", "atae_lstm_metrics.json"),
     )
 
@@ -211,6 +215,7 @@ def test_recurrent_trainers_restore_early_winner_before_evaluation_and_saving(
     train_rows, test_rows = _tiny_rows()
     trainers = (
         (target_training, train_target_lstm, save_target_artifact, "target_lstm.pt"),
+        (gru_training, train_target_gru, save_gru_artifact, "target_gru.pt"),
         (atae_training, train_atae_lstm, save_atae_artifact, "atae_lstm.pt"),
     )
 
