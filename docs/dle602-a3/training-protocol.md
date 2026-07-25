@@ -20,6 +20,7 @@ Default training parameters are:
 | Model | Optimiser | Learning rate | Weight decay | Epochs | Batch | Max length | Device |
 |---|---|---:|---:|---:|---:|---:|---|
 | Target-agnostic LSTM | Adam | 0.001 | 0.0001 | 8 | 64 | 80 | CPU |
+| Target-agnostic GRU | Adam | 0.001 | 0.0001 | 8 | 64 | 80 | CPU |
 | ATAE-LSTM | Adam | 0.001 | 0.0001 | 8 | 64 | 80 review / 12 aspect | CPU |
 | DistilBERT | AdamW | 0.00002 | 0.01 | 2 | 8 | 128 | CUDA, then MPS, then CPU |
 

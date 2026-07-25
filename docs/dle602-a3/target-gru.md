@@ -78,7 +78,7 @@ The clean-load candidate was trained on CPU with seed 42 from commit `bdea54d`, 
 | Parameters | 571,291 | **512,411** |
 | Artifact size | 2.25 MB | **2.02 MB** |
 
-At matched dimensions, the GRU used 10.31% fewer parameters, produced a 9.99% smaller artifact and trained 17.83% faster in the recorded runs. Its overall metrics were slightly stronger, but its mixed-polarity metrics were slightly weaker. This is a useful negative boundary rather than a contradiction: changing the recurrent cell does not solve the missing-aspect limitation shared by both review-only models.
+At matched dimensions, the GRU used 10.31% fewer parameters, produced a 9.99% smaller artifact and trained 17.83% faster in the recorded runs. These percentages were calculated from the unrounded records: 571,291 versus 512,411 parameters, 2,354,886 versus 2,119,733 bytes and 9.324929834 versus 7.662553375 seconds. Its overall metrics were slightly stronger, but its mixed-polarity metrics were slightly weaker. This is a useful negative boundary rather than a contradiction: changing the recurrent cell does not solve the missing-aspect limitation shared by both review-only models.
 
 The LSTM and GRU candidate artifacts were generated from different reviewed source commits because the GRU did not exist in the #84 commit. The final supplemental comparison in #96 must regenerate all six artifacts from one frozen commit before using cross-model timing as a final report claim.
 
