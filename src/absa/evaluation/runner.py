@@ -62,6 +62,11 @@ def _evaluate_models(
         warm_started = perf_counter()
         model_predictions = evaluator.predict_batch(rows)
         warm_seconds = perf_counter() - warm_started
+        warm_throughput = (
+            len(rows) / warm_seconds
+            if warm_seconds > 0
+            else None
+        )
         if len(model_predictions) != len(rows):
             raise ValueError(
                 f"{evaluator.key} returned {len(model_predictions)} predictions for {len(rows)} rows"
@@ -95,7 +100,7 @@ def _evaluate_models(
                 "cold_start_prediction_ms": (evaluator.load_seconds + first_seconds) * 1000,
                 "warm_total_seconds": warm_seconds,
                 "warm_latency_ms_per_example": warm_seconds * 1000 / len(rows),
-                "warm_examples_per_second": len(rows) / warm_seconds,
+                "warm_examples_per_second": warm_throughput,
             },
         }
     return results, predictions, mixed_ids
@@ -254,10 +259,12 @@ def _comparison_markdown(
         training_text = f"{training:.2f}" if training is not None else "n/a"
         parameters = efficiency["parameter_count"]
         parameters_text = f"{parameters:,}" if parameters is not None else "n/a"
+        throughput = efficiency["warm_examples_per_second"]
+        throughput_text = f"{throughput:.2f}" if throughput is not None else "n/a"
         rows.append(
             "| {name} | {scope} | {accuracy:.4f} | {macro:.4f} | {mixed_accuracy:.4f} | "
             "{mixed_macro:.4f} | {training} | {cold:.2f} | {warm:.3f} | "
-            "{throughput:.2f} | {parameters} | {size:.2f} | {device} |".format(
+            "{throughput} | {parameters} | {size:.2f} | {device} |".format(
                 name=result["display_name"],
                 scope="exploratory" if key in {"target_gru", "text_cnn"} else "A2 core",
                 accuracy=full["accuracy"],
@@ -267,7 +274,7 @@ def _comparison_markdown(
                 training=training_text,
                 cold=efficiency["cold_start_prediction_ms"],
                 warm=efficiency["warm_latency_ms_per_example"],
-                throughput=efficiency["warm_examples_per_second"],
+                throughput=throughput_text,
                 parameters=parameters_text,
                 size=efficiency["artifact_megabytes"],
                 device=efficiency["device"],
@@ -336,7 +343,7 @@ def _plot_confusion_matrices(
         constrained_layout=True,
         squeeze=False,
     )
-    for axis, key in zip(axes.flat, model_keys):
+    for axis, key in zip(axes.flat, model_keys, strict=False):
         result = results[key]
         matrix = result["full_test"]["confusion_matrix"]
         image = axis.imshow(matrix, cmap="Blues")
@@ -431,7 +438,10 @@ def run_evaluation(
             "clock": "time.perf_counter",
             "cold_start_prediction_ms": "artifact load plus first single-example prediction",
             "warm_latency_ms_per_example": "full official test batch after one warm-up prediction",
-            "warm_examples_per_second": "official test examples divided by warm total seconds",
+            "warm_examples_per_second": (
+                "official test examples divided by warm total seconds; null when "
+                "elapsed time is below clock resolution"
+            ),
             "parameter_count": "fitted classifier coefficients or stored neural parameters",
             "artifact_bytes": "recursive on-disk bytes for the loaded artifact",
         },

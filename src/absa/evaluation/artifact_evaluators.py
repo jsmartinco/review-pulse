@@ -479,7 +479,6 @@ def _load_distilbert(
     require_verified: bool,
     batch_size: int,
     device: torch.device,
-    require_explicit_labels: bool,
 ) -> LoadedEvaluator:
     path = artifact_dir / "distilbert"
     run_path = path / "training_run.json"
@@ -496,7 +495,7 @@ def _load_distilbert(
     _assert_embedded_metadata(metadata, record, run_path, require_verified)
     tokenizer = AutoTokenizer.from_pretrained(path, local_files_only=True)
     model = ABSADistilBERT.from_pretrained(path, local_files_only=True).to(device)
-    if require_explicit_labels:
+    if require_verified:
         labels = [
             model.config.id2label[index]
             for index in range(model.config.num_labels)
@@ -589,7 +588,6 @@ def load_artifact_evaluators(
                 require_verified,
                 transformer_batch_size,
                 device or preferred_device(),
-                require_explicit_labels=keys == SIX_MODEL_ORDER,
             )
         loaded.append(evaluator)
     return loaded

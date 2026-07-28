@@ -12,7 +12,7 @@ st.caption("DLE602 · three-class aspect-based sentiment analysis")
 st.info(
     "Enter one or more aspects manually. Review-only models intentionally receive "
     "only the review; ATAE-LSTM and DistilBERT receive the review-and-aspect pair. "
-    "GRU and Text CNN are exploratory extensions."
+    "GRU and Text CNN are exploratory extensions and do not support token evidence."
 )
 
 model_name = st.selectbox(

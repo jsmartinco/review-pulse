@@ -53,3 +53,4 @@ def test_v3_page_uses_the_explicit_six_model_registry():
     page = Path("pages/2_ReviewPulse_v3_0_0.py").read_text()
     assert "ALL_MODEL_OPTIONS" in page
     assert "OPTIONAL_MODEL_OPTIONS" not in page
+    assert "do not support token evidence" in page

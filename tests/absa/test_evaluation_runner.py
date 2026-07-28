@@ -14,7 +14,7 @@ from src.absa.evaluation.artifact_evaluators import (
     artifact_size,
     load_artifact_evaluators,
 )
-from src.absa.evaluation.runner import run_evaluation
+from src.absa.evaluation.runner import _evaluate_models, run_evaluation
 
 
 def _row(sentence_id: str, review: str, aspect: str, label: str) -> AspectExample:
@@ -153,6 +153,28 @@ def test_runner_writes_explicit_six_model_supplement(tmp_path) -> None:
         "text_cnn",
     ]
     assert (output_dir / "confusion_matrices.png").stat().st_size > 0
+
+
+def test_evaluation_handles_zero_warm_duration(monkeypatch) -> None:
+    rows = [
+        _row("mixed", "great food but slow service", "food", "positive"),
+        _row("mixed", "great food but slow service", "service", "negative"),
+    ]
+    predictions = {(row.sentence_id, row.aspect): row.label for row in rows}
+    monkeypatch.setattr(
+        "src.absa.evaluation.runner.perf_counter",
+        lambda: 1.0,
+    )
+
+    results, _, _ = _evaluate_models(
+        rows,
+        [_evaluator("tfidf", predictions)],
+        ("tfidf",),
+    )
+
+    assert results["tfidf"]["efficiency"]["warm_total_seconds"] == 0.0
+    assert results["tfidf"]["efficiency"]["warm_examples_per_second"] is None
+    json.dumps(results)
 
 
 def test_artifact_size_sums_files_recursively(tmp_path) -> None:
