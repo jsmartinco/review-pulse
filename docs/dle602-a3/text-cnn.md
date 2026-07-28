@@ -6,7 +6,7 @@ The TextCNN is the sixth-model candidate mapped in issue #95. It is an explorato
 
 Like TF-IDF, the target-agnostic LSTM and the optional GRU, the CNN receives only the review. `predict_aspects()` repeats the same review-level prediction for each supplied aspect, making its expected limitation on mixed-polarity multi-aspect sentences explicit. Convolution activations are not exposed as an explanation, and the model reports aspect-specific token evidence as unsupported.
 
-The canonical four-model training command, evaluation outputs and Streamlit options remain unchanged until the supplemental integration in #96.
+The canonical four-model training command and evaluation outputs remain unchanged. Issue #96 adds TextCNN only through an explicit supplemental mode and exposes it as exploratory in Streamlit.
 
 ## Architecture contract
 
@@ -63,7 +63,7 @@ outputs/absa/text_cnn.pt
 outputs/absa/text_cnn_metrics.json
 ```
 
-`load_text_cnn_evaluator()` exposes the common `LoadedEvaluator` contract. Full-test and mixed-polarity metrics therefore use the existing label order, subset definition and metric functions; six-model shared outputs remain deferred to #96.
+`load_text_cnn_evaluator()` exposes the common `LoadedEvaluator` contract. Full-test and mixed-polarity metrics therefore use the existing label order, subset definition and metric functions. Issue #96 now writes the shared six-model outputs separately from the canonical output.
 
 The selected-training wrapper verifies that the gate and training use the same Git commit and dataset checksums, then forwards the exact `selected` filter widths/count from `text_cnn_config_search.json` to the common runner.
 
@@ -91,7 +91,7 @@ The selected configuration was then trained for the full eight-epoch budget. Bes
 
 The CNN produced the strongest candidate accuracy and the smallest review-only neural artifact, but it did not improve macro-F1 and trained more slowly in these separate CPU runs. Its mixed-polarity neutral recall was zero. This result is retained because it demonstrates that a non-recurrent sentence encoder still cannot resolve aspect-specific contradictions merely by changing architecture.
 
-The LSTM, GRU and CNN values above were generated from different reviewed source commits. Issue #96 must regenerate all six artifacts from one frozen commit before presenting cross-model timing or efficiency as a final report claim.
+The earlier LSTM, GRU and CNN values came from different reviewed source commits. Issue #96 resolved that limitation by regenerating all six artifacts from frozen commit `cef08fa`; the final shared evidence is recorded in `six-model-results.md`.
 
 ## Reproducibility and artifacts
 
