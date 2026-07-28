@@ -133,6 +133,56 @@ def test_training_runner_supports_gru_without_widening_core_default(
     assert saved["gru"]["provenance"] == provenance
 
 
+def test_training_runner_supports_text_cnn_without_widening_core_default(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    saved = {}
+    trained = {}
+    monkeypatch.setattr(
+        training_runner,
+        "train_text_cnn",
+        lambda *_args, **kwargs: (
+            trained.update(kwargs) or object(),
+            {"token": 1},
+            _metrics("text_cnn"),
+        ),
+    )
+    monkeypatch.setattr(
+        training_runner,
+        "save_text_cnn",
+        lambda _model, _vocab, metrics, _output: saved.update(cnn=metrics),
+    )
+    provenance = {
+        "git_commit": "abc123",
+        "generated_at_utc": "2026-07-29T00:00:00+10:00",
+        "train_file": "restaurants_train.xml",
+        "train_sha256": "train-fixture",
+        "test_file": "restaurants_test.xml",
+        "test_sha256": "test-fixture",
+    }
+    completed = training_runner.train_models(
+        [object()],
+        [object()],
+        tmp_path,
+        models=("text_cnn",),
+        cnn_filter_widths=(2, 3, 4),
+        cnn_num_filters=64,
+        provenance=provenance,
+    )
+    assert training_runner.MODEL_ORDER == (
+        "tfidf",
+        "target_lstm",
+        "atae_lstm",
+        "distilbert",
+    )
+    assert training_runner.OPTIONAL_MODEL_ORDER == ("target_gru", "text_cnn")
+    assert completed.keys() == {"text_cnn"}
+    assert saved["cnn"]["provenance"] == provenance
+    assert trained["filter_widths"] == (2, 3, 4)
+    assert trained["num_filters"] == 64
+
+
 @pytest.mark.parametrize(
     "provenance",
     [

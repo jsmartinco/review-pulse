@@ -19,6 +19,7 @@ from ..models.atae_lstm import ATAELSTM
 from ..models.distilbert import ABSADistilBERT
 from ..models.target_gru import TargetAgnosticGRU
 from ..models.target_lstm import TargetAgnosticLSTM
+from ..models.text_cnn import TextCNN
 from ..tokenization.bert_dataset import AspectPairDataset
 from ..tokenization.sequence import encode
 
@@ -27,6 +28,7 @@ MODEL_NAMES = {
     "tfidf": "TF-IDF review-only",
     "target_lstm": "LSTM review-only",
     "target_gru": "GRU review-only (exploratory)",
+    "text_cnn": "Text CNN review-only (exploratory)",
     "atae_lstm": "ATAE-LSTM",
     "distilbert": "DistilBERT sentence-pair",
 }
@@ -295,6 +297,85 @@ def load_target_gru_evaluator(
             "Regenerate it with the training runner."
         )
     return _load_target_gru(
+        artifact_dir,
+        record,
+        require_verified,
+        batch_size,
+    )
+
+
+def _load_text_cnn(
+    artifact_dir: Path,
+    record: dict[str, object],
+    require_verified: bool,
+    batch_size: int,
+) -> LoadedEvaluator:
+    path = artifact_dir / "text_cnn.pt"
+    started = perf_counter()
+    artifact = torch.load(path, map_location="cpu", weights_only=True)
+    training_seconds = _training_seconds(record, path, require_verified)
+    _assert_embedded_metadata(artifact, record, path, require_verified)
+    vocab = artifact["vocab"]
+    config = _config(record)
+    max_length = int(config.get("max_length", 80))
+    model = TextCNN(
+        len(vocab),
+        embedding_dim=int(config.get("embedding_dim", 100)),
+        num_filters=int(config.get("num_filters", 100)),
+        filter_widths=tuple(config.get("filter_widths", (3, 4, 5))),
+        dropout=float(config.get("dropout", 0.5)),
+    )
+    model.load_state_dict(artifact["state_dict"])
+    model.eval()
+    load_seconds = perf_counter() - started
+
+    def predict(rows: Sequence[AspectExample]) -> list[str]:
+        predicted: list[str] = []
+        with torch.no_grad():
+            for batch in _batched(rows, batch_size):
+                logits = model(
+                    encode(
+                        [row.review_raw for row in batch],
+                        vocab,
+                        max_length,
+                    )
+                )
+                predicted.extend(
+                    ID_TO_LABEL[int(index)] for index in logits.argmax(1)
+                )
+        return predicted
+
+    return LoadedEvaluator(
+        key="text_cnn",
+        display_name=MODEL_NAMES["text_cnn"],
+        device="cpu",
+        artifact_bytes=artifact_size(path),
+        training_seconds=training_seconds,
+        training_config=config,
+        provenance=_provenance(record),
+        load_seconds=load_seconds,
+        predict_batch=predict,
+    )
+
+
+def load_text_cnn_evaluator(
+    artifact_dir: Path,
+    *,
+    require_verified: bool = True,
+    batch_size: int = 64,
+) -> LoadedEvaluator:
+    """Load the optional TextCNN without widening the canonical runner."""
+    if batch_size < 1:
+        raise ValueError("Evaluation batch size must be at least 1")
+    metrics_path = artifact_dir / "text_cnn_metrics.json"
+    record = json.loads(metrics_path.read_text())
+    _training_seconds(record, metrics_path, require_verified)
+    if require_verified and "provenance" not in record:
+        raise UnverifiedArtifactError(
+            f"{metrics_path} has no shared training provenance. "
+            "Regenerate it with the training runner."
+        )
+    return _load_text_cnn(
         artifact_dir,
         record,
         require_verified,

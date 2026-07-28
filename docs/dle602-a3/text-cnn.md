@@ -1,0 +1,94 @@
+# Optional Review-Only TextCNN Protocol
+
+## Experimental role
+
+The TextCNN is the sixth-model candidate mapped in issue #95. It is an exploratory review-only, non-recurrent baseline, not a replacement for the submitted four-model A2 experiment and not a reproduction of Zhao, Gui and Zhang's Twitter architecture.
+
+Like TF-IDF, the target-agnostic LSTM and the optional GRU, the CNN receives only the review. `predict_aspects()` repeats the same review-level prediction for each supplied aspect, making its expected limitation on mixed-polarity multi-aspect sentences explicit. Convolution activations are not exposed as an explanation, and the model reports aspect-specific token evidence as unsupported.
+
+The canonical four-model training command, evaluation outputs and Streamlit options remain unchanged until the supplemental integration in #96.
+
+## Architecture contract
+
+The candidate uses:
+
+| Control | Value |
+|---|---:|
+| Input | Review only |
+| Vocabulary | Training reviews |
+| Maximum length | 80 |
+| Embedding dimension | 100 |
+| Candidate filter widths | `(2,3,4)` or `(3,4,5)` |
+| Candidate filters per width | 64 or 100 |
+| Activation | ReLU |
+| Pooling | Global max |
+| Short-input handling | Right-pad to widest filter |
+| Dropout | 0.5 |
+| Output logits | 3 |
+| Epoch budget | 8 final; 4 configuration gate |
+| Batch size | 64 |
+| Optimizer | Adam |
+| Learning rate | 0.001 |
+| Weight decay | 0.0001 |
+| Selection | Development macro-F1 |
+| Early-stopping patience | 2 |
+
+The model embeds the review, applies parallel one-dimensional convolutions, globally max-pools each feature map, concatenates the pooled features and applies dropout before the three-class head. Inputs shorter than the widest filter are right-padded in the model; the training encoder already pads normal batches to the recorded maximum length.
+
+## Bounded development-only selection
+
+The configuration gate compares exactly three candidates:
+
+1. widths `(2,3,4)`, 64 filters per width;
+2. widths `(3,4,5)`, 64 filters per width;
+3. widths `(3,4,5)`, 100 filters per width.
+
+All candidates use seed 42, the same sentence-grouped train/development split, four epochs maximum and development macro-F1 selection. The search path sets `official_test_evaluated` to `false`; the untouched official test is evaluated only after the configuration is locked. Ties retain the earlier, lower-compute candidate.
+
+Run the bounded gate, train the selected candidate and verify a clean load:
+
+```bash
+.venv/bin/python scripts/select_text_cnn_config.py
+
+.venv/bin/python -m src.absa.training.runner \
+  --models text_cnn \
+  --cnn-filter-widths 3 4 5 \
+  --cnn-num-filters 100 \
+  --device cpu
+
+.venv/bin/python scripts/smoke_text_cnn.py
+```
+
+Generated, gitignored evidence:
+
+```text
+outputs/absa/text_cnn_config_search.json
+outputs/absa/text_cnn.pt
+outputs/absa/text_cnn_metrics.json
+```
+
+`load_text_cnn_evaluator()` exposes the common `LoadedEvaluator` contract. Full-test and mixed-polarity metrics therefore use the existing label order, subset definition and metric functions; six-model shared outputs remain deferred to #96.
+
+The widths/count shown in the training command are the defaults. Replace them with the `selected` values from `text_cnn_config_search.json` when the gate selects another candidate.
+
+## Reproducibility and artifacts
+
+The trainer uses the #91 controls:
+
+- explicit Python, NumPy, PyTorch and DataLoader seed;
+- sentence-grouped development split and untouched official test split;
+- weight decay and dropout;
+- development macro-F1 checkpoint selection;
+- early stopping and restored best checkpoint;
+- complete epoch history and overfitting diagnostic;
+- source commit, dataset checksums and generated timestamp from the shared runner;
+- persisted filter widths, filter count, pooling and padding behaviour.
+
+## Reporting guardrails
+
+- Label CNN results exploratory.
+- Preserve a negative or negligible result.
+- Compare it with the other review-only baselines, especially TF-IDF, LSTM and GRU.
+- Do not interpret repeated per-aspect outputs as aspect awareness.
+- Do not present convolution activations as attention, attribution or causal reasoning.
+- Do not alter the canonical four-model evidence when adding the optional artifact.

@@ -213,14 +213,18 @@ Regenerate verified v3 artifacts and produce the common four-model A3 comparison
 
 The evaluation rejects pre-#91 artifacts by default and writes metrics, shared predictions, efficiency evidence, error candidates and confusion matrices below `outputs/absa/evaluation/`. See `docs/dle602-a3/evaluation-protocol.md` for the measurement definitions and staged commands.
 
-The optional GRU candidate remains outside those canonical four-model outputs. Train and smoke it independently with:
+The optional GRU and TextCNN candidates remain outside those canonical four-model outputs. Train and smoke them independently with:
 
 ```bash
 .venv/bin/python -m src.absa.training.runner --models target_gru --device cpu
 .venv/bin/python scripts/smoke_target_gru.py
+
+.venv/bin/python scripts/select_text_cnn_config.py
+.venv/bin/python -m src.absa.training.runner --models text_cnn --device cpu
+.venv/bin/python scripts/smoke_text_cnn.py
 ```
 
-Its matched LSTM controls, deliberate differences and reporting guardrails are documented in `docs/dle602-a3/target-gru.md`. Supplemental six-model integration is deferred to issue #96.
+The matched GRU controls and results are documented in `docs/dle602-a3/target-gru.md`; the bounded development-only CNN gate and architecture contract are documented in `docs/dle602-a3/text-cnn.md`. Supplemental six-model integration is deferred to issue #96.
 
 ## Inference API
 

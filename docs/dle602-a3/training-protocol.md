@@ -1,6 +1,6 @@
 # ReviewPulse v3 neural training protocol
 
-This protocol is the experiment contract for ReviewPulse v3. It applies to the target-agnostic LSTM, ATAE-LSTM and DistilBERT sentence-pair models in the four-model comparison, and to the optional target-agnostic GRU in issue #94.
+This protocol is the experiment contract for ReviewPulse v3. It applies to the target-agnostic LSTM, ATAE-LSTM and DistilBERT sentence-pair models in the four-model comparison, and to the optional target-agnostic GRU and review-only TextCNN in issues #94 and #95.
 
 ## Reproducibility controls
 
@@ -21,6 +21,7 @@ Default training parameters are:
 |---|---|---:|---:|---:|---:|---:|---|
 | Target-agnostic LSTM | Adam | 0.001 | 0.0001 | 8 | 64 | 80 | CPU |
 | Target-agnostic GRU | Adam | 0.001 | 0.0001 | 8 | 64 | 80 | CPU |
+| Review-only TextCNN | Adam | 0.001 | 0.0001 | 8 | 64 | 80 | CPU |
 | ATAE-LSTM | Adam | 0.001 | 0.0001 | 8 | 64 | 80 review / 12 aspect | CPU |
 | DistilBERT | AdamW | 0.00002 | 0.01 | 2 | 8 | 128 | CUDA, then MPS, then CPU |
 
@@ -43,7 +44,7 @@ The decision and measured post-best score drop are persisted in `overfitting_dia
 
 ## Persisted evidence
 
-- `target_lstm.pt` and `atae_lstm.pt` embed the run configuration, history and checkpoint-selection metadata alongside the state dictionary and vocabulary.
+- `target_lstm.pt`, `target_gru.pt`, `text_cnn.pt` and `atae_lstm.pt` embed the run configuration, history and checkpoint-selection metadata alongside the state dictionary and vocabulary.
 - `distilbert/training_run.json` stores the same metadata beside the Hugging Face checkpoint.
 - Each trainer also writes its complete `<model>_metrics.json`, including selected development metrics, official test metrics and the overfitting diagnostic.
 
