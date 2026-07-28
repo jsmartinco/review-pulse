@@ -212,6 +212,35 @@ def _comparison_markdown(
     results: dict[str, dict[str, object]],
     model_keys: tuple[str, ...],
 ) -> str:
+    if model_keys == CORE_MODEL_ORDER:
+        rows = [
+            "| Model | Test accuracy | Test macro-F1 | Mixed accuracy | Mixed macro-F1 | Training s | Cold ms | Warm ms/example | Artifact MB |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+        for key in model_keys:
+            result = results[key]
+            full = result["full_test"]
+            mixed = result["mixed_polarity_multi_aspect"]
+            efficiency = result["efficiency"]
+            training = efficiency["training_seconds"]
+            training_text = f"{training:.2f}" if training is not None else "n/a"
+            rows.append(
+                "| {name} | {accuracy:.4f} | {macro:.4f} | {mixed_accuracy:.4f} | "
+                "{mixed_macro:.4f} | {training} | {cold:.2f} | {warm:.3f} | "
+                "{size:.2f} |".format(
+                    name=result["display_name"],
+                    accuracy=full["accuracy"],
+                    macro=full["macro_f1"],
+                    mixed_accuracy=mixed["accuracy"],
+                    mixed_macro=mixed["macro_f1"],
+                    training=training_text,
+                    cold=efficiency["cold_start_prediction_ms"],
+                    warm=efficiency["warm_latency_ms_per_example"],
+                    size=efficiency["artifact_megabytes"],
+                )
+            )
+        return "\n".join(rows) + "\n"
+
     rows = [
         "| Model | Scope | Test accuracy | Test macro-F1 | Mixed accuracy | Mixed macro-F1 | Training s | Cold ms | Warm ms/example | Throughput ex/s | Parameters | Artifact MB | Device |",
         "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",

@@ -96,7 +96,9 @@ def test_runner_writes_common_predictions_metrics_efficiency_and_errors(tmp_path
     errors = json.loads((output_dir / "error_analysis.json").read_text())
     assert errors["counts"]["conditioned_wins_on_mixed_subset"] == 1
     comparison = (output_dir / "comparison.md").read_text()
-    assert comparison.count("| TF-IDF review-only | A2 core |") == 1
+    assert comparison.count("| TF-IDF review-only |") == 1
+    assert "| Scope |" not in comparison
+    assert "### Full-test per-class evidence" not in comparison
     assert (output_dir / "confusion_matrices.png").stat().st_size > 0
     assert report["predictions_sha256"]
     assert report["comparison_mode"] == "canonical_four_model"
