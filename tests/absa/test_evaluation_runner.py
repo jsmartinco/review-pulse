@@ -95,7 +95,8 @@ def test_runner_writes_common_predictions_metrics_efficiency_and_errors(tmp_path
 
     errors = json.loads((output_dir / "error_analysis.json").read_text())
     assert errors["counts"]["conditioned_wins_on_mixed_subset"] == 1
-    assert (output_dir / "comparison.md").read_text().count("| TF-IDF review-only |") == 1
+    comparison = (output_dir / "comparison.md").read_text()
+    assert comparison.count("| TF-IDF review-only | A2 core |") == 1
     assert (output_dir / "confusion_matrices.png").stat().st_size > 0
     assert report["predictions_sha256"]
     assert report["comparison_mode"] == "canonical_four_model"
@@ -134,6 +135,11 @@ def test_runner_writes_explicit_six_model_supplement(tmp_path) -> None:
     comparison = (output_dir / "comparison.md").read_text()
     assert "| GRU review-only (exploratory) | exploratory |" in comparison
     assert "| Text CNN review-only (exploratory) | exploratory |" in comparison
+    assert "Throughput ex/s" in comparison
+    assert "| Device |" in comparison
+    assert "### Full-test per-class evidence" in comparison
+    assert "### Mixed-polarity per-class evidence" in comparison
+    assert "Negative (n=1)" in comparison
     with (output_dir / "predictions.csv").open(newline="") as handle:
         prediction_rows = list(csv.DictReader(handle))
     assert list(prediction_rows[0])[-6:] == list(SIX_MODEL_ORDER)

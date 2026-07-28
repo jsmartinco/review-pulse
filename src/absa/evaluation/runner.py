@@ -213,8 +213,8 @@ def _comparison_markdown(
     model_keys: tuple[str, ...],
 ) -> str:
     rows = [
-        "| Model | Scope | Test accuracy | Test macro-F1 | Mixed accuracy | Mixed macro-F1 | Training s | Cold ms | Warm ms/example | Parameters | Artifact MB |",
-        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Model | Scope | Test accuracy | Test macro-F1 | Mixed accuracy | Mixed macro-F1 | Training s | Cold ms | Warm ms/example | Throughput ex/s | Parameters | Artifact MB | Device |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for key in model_keys:
         result = results[key]
@@ -228,7 +228,7 @@ def _comparison_markdown(
         rows.append(
             "| {name} | {scope} | {accuracy:.4f} | {macro:.4f} | {mixed_accuracy:.4f} | "
             "{mixed_macro:.4f} | {training} | {cold:.2f} | {warm:.3f} | "
-            "{parameters} | {size:.2f} |".format(
+            "{throughput:.2f} | {parameters} | {size:.2f} | {device} |".format(
                 name=result["display_name"],
                 scope="exploratory" if key in {"target_gru", "text_cnn"} else "A2 core",
                 accuracy=full["accuracy"],
@@ -238,10 +238,53 @@ def _comparison_markdown(
                 training=training_text,
                 cold=efficiency["cold_start_prediction_ms"],
                 warm=efficiency["warm_latency_ms_per_example"],
+                throughput=efficiency["warm_examples_per_second"],
                 parameters=parameters_text,
                 size=efficiency["artifact_megabytes"],
+                device=efficiency["device"],
             )
         )
+
+    for heading, result_key in (
+        ("Full-test per-class evidence", "full_test"),
+        ("Mixed-polarity per-class evidence", "mixed_polarity_multi_aspect"),
+    ):
+        first_per_class = results[model_keys[0]][result_key]["per_class"]
+        supports = {
+            label: int(first_per_class[label]["support"])
+            for label in LABELS
+        }
+        rows.extend(
+            [
+                "",
+                f"### {heading}",
+                "",
+                "Cells report precision / recall / F1.",
+                "",
+                "| Model | "
+                + " | ".join(
+                    f"{label.title()} (n={supports[label]})"
+                    for label in LABELS
+                )
+                + " |",
+                "|---|" + "---:|" * len(LABELS),
+            ]
+        )
+        for key in model_keys:
+            per_class = results[key][result_key]["per_class"]
+            cells = [
+                "{precision:.4f} / {recall:.4f} / {f1:.4f}".format(
+                    precision=per_class[label]["precision"],
+                    recall=per_class[label]["recall"],
+                    f1=per_class[label]["f1-score"],
+                )
+                for label in LABELS
+            ]
+            rows.append(
+                f"| {results[key]['display_name']} | "
+                + " | ".join(cells)
+                + " |"
+            )
     return "\n".join(rows) + "\n"
 
 
@@ -359,6 +402,8 @@ def run_evaluation(
             "clock": "time.perf_counter",
             "cold_start_prediction_ms": "artifact load plus first single-example prediction",
             "warm_latency_ms_per_example": "full official test batch after one warm-up prediction",
+            "warm_examples_per_second": "official test examples divided by warm total seconds",
+            "parameter_count": "fitted classifier coefficients or stored neural parameters",
             "artifact_bytes": "recursive on-disk bytes for the loaded artifact",
         },
         "predictions_file": predictions_path.name,
