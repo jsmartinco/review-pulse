@@ -272,6 +272,7 @@ class _TinyDistilBert(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.classifier = torch.nn.Linear(2, 3)
+        self.config = SimpleNamespace(id2label={}, label2id={})
 
     def forward(self, input_ids: torch.Tensor) -> SimpleNamespace:
         return SimpleNamespace(logits=self.classifier(input_ids.float()))
@@ -321,6 +322,11 @@ def test_distilbert_training_is_seeded_and_records_complete_run_config(monkeypat
         for name in first_model.state_dict()
     )
     assert first["selection_metric"] == "development_macro_f1"
+    assert first_model.config.id2label == {
+        0: "negative",
+        1: "neutral",
+        2: "positive",
+    }
     assert first["config"] == {
         "model": "distilbert",
         "pretrained_model": "tiny-distilbert",

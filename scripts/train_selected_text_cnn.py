@@ -13,6 +13,7 @@ if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
 from src.absa.config import ABSA_DATA_DIR, ABSA_OUTPUTS_DIR
+from src.absa.model_order import SIX_MODEL_ORDER
 from src.absa.training.provenance import file_sha256, git_commit
 
 
@@ -91,12 +92,18 @@ def main() -> None:
         choices=("auto", "cpu", "mps", "cuda"),
         default="cpu",
     )
+    parser.add_argument(
+        "--all-six",
+        action="store_true",
+        help="Train the four A2 core models plus exploratory GRU and selected TextCNN.",
+    )
     args = parser.parse_args()
 
     widths, num_filters = selected_configuration(
         args.selection_file,
         args.data_dir,
     )
+    model_keys = SIX_MODEL_ORDER if args.all_six else ("text_cnn",)
     subprocess.run(
         [
             sys.executable,
@@ -107,7 +114,7 @@ def main() -> None:
             "--output-dir",
             str(args.output_dir),
             "--models",
-            "text_cnn",
+            *model_keys,
             "--seed",
             str(args.seed),
             "--cnn-epochs",

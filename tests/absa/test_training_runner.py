@@ -177,6 +177,14 @@ def test_training_runner_supports_text_cnn_without_widening_core_default(
         "distilbert",
     )
     assert training_runner.OPTIONAL_MODEL_ORDER == ("target_gru", "text_cnn")
+    assert training_runner.AVAILABLE_MODELS == (
+        "tfidf",
+        "target_lstm",
+        "target_gru",
+        "text_cnn",
+        "atae_lstm",
+        "distilbert",
+    )
     assert completed.keys() == {"text_cnn"}
     assert saved["cnn"]["provenance"] == provenance
     assert trained["filter_widths"] == (2, 3, 4)

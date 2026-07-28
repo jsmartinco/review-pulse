@@ -224,7 +224,19 @@ The optional GRU and TextCNN candidates remain outside those canonical four-mode
 .venv/bin/python scripts/smoke_text_cnn.py
 ```
 
-The matched GRU controls and results are documented in `docs/dle602-a3/target-gru.md`; the bounded development-only CNN gate and architecture contract are documented in `docs/dle602-a3/text-cnn.md`. Supplemental six-model integration is deferred to issue #96.
+The matched GRU controls and results are documented in `docs/dle602-a3/target-gru.md`; the bounded development-only CNN gate and architecture contract are documented in `docs/dle602-a3/text-cnn.md`. Issue #96 keeps their joint six-model evidence explicitly separate from the canonical four-model outputs.
+
+Regenerate and evaluate the explicit six-model supplement from one frozen commit:
+
+```bash
+.venv/bin/python scripts/select_text_cnn_config.py
+.venv/bin/python scripts/train_selected_text_cnn.py --all-six --device auto
+.venv/bin/python -m src.absa.evaluation.runner \
+  --models tfidf target_lstm target_gru text_cnn atae_lstm distilbert \
+  --device auto
+```
+
+This writes separate evidence below `outputs/absa/evaluation-six-model/`; the default four-model commands and `outputs/absa/evaluation/` remain unchanged.
 
 ## Inference API
 

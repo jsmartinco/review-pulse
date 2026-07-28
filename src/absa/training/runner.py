@@ -11,6 +11,7 @@ import torch
 
 from ..config import ABSA_DATA_DIR, ABSA_OUTPUTS_DIR
 from ..data.parser import parse_aspect_examples
+from ..model_order import CORE_MODEL_ORDER, OPTIONAL_MODEL_ORDER, SIX_MODEL_ORDER
 from .atae_lstm import save_artifact as save_atae_lstm
 from .atae_lstm import train_atae_lstm
 from .baseline import save_artifact as save_baseline
@@ -26,9 +27,8 @@ from .text_cnn import save_artifact as save_text_cnn
 from .text_cnn import train_text_cnn
 
 
-MODEL_ORDER = ("tfidf", "target_lstm", "atae_lstm", "distilbert")
-OPTIONAL_MODEL_ORDER = ("target_gru", "text_cnn")
-AVAILABLE_MODELS = MODEL_ORDER + OPTIONAL_MODEL_ORDER
+MODEL_ORDER = CORE_MODEL_ORDER
+AVAILABLE_MODELS = SIX_MODEL_ORDER
 REQUIRED_PROVENANCE_FIELDS = frozenset(
     {
         "git_commit",

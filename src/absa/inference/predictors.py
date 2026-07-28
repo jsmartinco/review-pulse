@@ -36,7 +36,13 @@ OPTIONAL_MODEL_OPTIONS = {
     "absa_target_gru": "GRU review-only (exploratory)",
     "absa_text_cnn": "Text CNN review-only (exploratory)",
 }
-ALL_MODEL_OPTIONS = {**MODEL_OPTIONS, **OPTIONAL_MODEL_OPTIONS}
+ALL_MODEL_OPTIONS = {
+    "absa_tfidf": MODEL_OPTIONS["absa_tfidf"],
+    "absa_target_lstm": MODEL_OPTIONS["absa_target_lstm"],
+    **OPTIONAL_MODEL_OPTIONS,
+    "absa_atae_lstm": MODEL_OPTIONS["absa_atae_lstm"],
+    "absa_distilbert": MODEL_OPTIONS["absa_distilbert"],
+}
 
 
 def _payload(aspect: str, logits: torch.Tensor, model_name: str, token_evidence: dict) -> dict:

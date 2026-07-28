@@ -3,7 +3,7 @@
 import streamlit as st
 
 from src.absa.inference.api import predict_aspects
-from src.absa.inference.predictors import MODEL_OPTIONS, get_predictor
+from src.absa.inference.predictors import ALL_MODEL_OPTIONS, get_predictor
 from src.absa.interpretability.heatmap import render_token_heatmap_html
 from src.absa.samples import get_random_sample
 
@@ -11,10 +11,15 @@ st.title("ReviewPulse v3.0.0")
 st.caption("DLE602 · three-class aspect-based sentiment analysis")
 st.info(
     "Enter one or more aspects manually. Review-only models intentionally receive "
-    "only the review; ATAE-LSTM and DistilBERT receive the review-and-aspect pair."
+    "only the review; ATAE-LSTM and DistilBERT receive the review-and-aspect pair. "
+    "GRU and Text CNN are exploratory extensions."
 )
 
-model_name = st.selectbox("Model", list(MODEL_OPTIONS), format_func=MODEL_OPTIONS.__getitem__)
+model_name = st.selectbox(
+    "Model",
+    list(ALL_MODEL_OPTIONS),
+    format_func=ALL_MODEL_OPTIONS.__getitem__,
+)
 
 
 def load_sample() -> None:

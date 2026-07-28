@@ -1,10 +1,16 @@
 import csv
 import json
 
+import numpy as np
+
 from src.absa.data.schema import AspectExample
 from src.absa.evaluation.artifact_evaluators import (
+    CORE_MODEL_ORDER,
+    SIX_MODEL_ORDER,
     LoadedEvaluator,
     UnverifiedArtifactError,
+    _normalise_model_keys,
+    _assert_labels,
     artifact_size,
     load_artifact_evaluators,
 )
@@ -31,11 +37,14 @@ def _evaluator(key: str, predictions: dict[tuple[str, str], str]) -> LoadedEvalu
         display_name={
             "tfidf": "TF-IDF review-only",
             "target_lstm": "LSTM review-only",
+            "target_gru": "GRU review-only (exploratory)",
+            "text_cnn": "Text CNN review-only (exploratory)",
             "atae_lstm": "ATAE-LSTM",
             "distilbert": "DistilBERT sentence-pair",
         }[key],
         device="cpu",
         artifact_bytes=1024,
+        parameter_count=100,
         training_seconds=2.5,
         training_config={"seed": 42},
         provenance={"git_commit": "fixture"},
@@ -89,6 +98,53 @@ def test_runner_writes_common_predictions_metrics_efficiency_and_errors(tmp_path
     assert (output_dir / "comparison.md").read_text().count("| TF-IDF review-only |") == 1
     assert (output_dir / "confusion_matrices.png").stat().st_size > 0
     assert report["predictions_sha256"]
+    assert report["comparison_mode"] == "canonical_four_model"
+    assert tuple(report["model_order"]) == CORE_MODEL_ORDER
+
+
+def test_runner_writes_explicit_six_model_supplement(tmp_path) -> None:
+    rows = [
+        _row("mixed", "great food but slow service", "food", "positive"),
+        _row("mixed", "great food but slow service", "service", "negative"),
+        _row("neutral", "ordinary menu", "menu", "neutral"),
+    ]
+    gold = {(row.sentence_id, row.aspect): row.label for row in rows}
+    review_only = gold | {("mixed", "service"): "positive"}
+    evaluators = [
+        _evaluator(
+            key,
+            review_only
+            if key in {"tfidf", "target_lstm", "target_gru", "text_cnn"}
+            else gold,
+        )
+        for key in SIX_MODEL_ORDER
+    ]
+
+    output_dir = tmp_path / "evaluation-six-model"
+    report = run_evaluation(
+        rows,
+        evaluators,
+        output_dir,
+        model_keys=SIX_MODEL_ORDER,
+    )
+
+    assert report["comparison_mode"] == "exploratory_six_model"
+    assert list(report["models"]) == list(SIX_MODEL_ORDER)
+    assert report["models"]["text_cnn"]["efficiency"]["parameter_count"] == 100
+    comparison = (output_dir / "comparison.md").read_text()
+    assert "| GRU review-only (exploratory) | exploratory |" in comparison
+    assert "| Text CNN review-only (exploratory) | exploratory |" in comparison
+    with (output_dir / "predictions.csv").open(newline="") as handle:
+        prediction_rows = list(csv.DictReader(handle))
+    assert list(prediction_rows[0])[-6:] == list(SIX_MODEL_ORDER)
+    errors = json.loads((output_dir / "error_analysis.json").read_text())
+    assert errors["model_groups"]["review_only"] == [
+        "tfidf",
+        "target_lstm",
+        "target_gru",
+        "text_cnn",
+    ]
+    assert (output_dir / "confusion_matrices.png").stat().st_size > 0
 
 
 def test_artifact_size_sums_files_recursively(tmp_path) -> None:
@@ -128,3 +184,24 @@ def test_artifact_preflight_rejects_mixed_training_runs_before_model_loading(tmp
         assert "same commit" in str(error)
     else:
         raise AssertionError("A comparison must not mix artifacts from different runs")
+
+
+def test_artifact_selection_accepts_ordered_subsets_and_rejects_reordering() -> None:
+    assert _normalise_model_keys(("target_gru", "text_cnn")) == (
+        "target_gru",
+        "text_cnn",
+    )
+    try:
+        _normalise_model_keys(("text_cnn", "target_gru"))
+    except ValueError as error:
+        assert "order" in str(error)
+    else:
+        raise AssertionError("Selected models must retain the shared order")
+
+
+def test_artifact_label_validation_accepts_numpy_classifier_classes(tmp_path) -> None:
+    _assert_labels(
+        np.array(["negative", "neutral", "positive"]),
+        tmp_path / "tfidf.joblib",
+        True,
+    )

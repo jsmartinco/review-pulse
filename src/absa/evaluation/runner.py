@@ -1,13 +1,12 @@
-"""Reproduce the four-model ReviewPulse v3 comparison from verified artifacts."""
+"""Reproduce canonical four-model or exploratory six-model comparisons."""
 
 from __future__ import annotations
 
 import argparse
 import csv
-import hashlib
 import json
+import math
 import platform
-import subprocess
 import sys
 from datetime import datetime, timezone
 from importlib.metadata import version
@@ -21,7 +20,10 @@ from ..data.parser import parse_aspect_examples
 from ..data.schema import AspectExample
 from ..data.splits import retained_examples
 from ..labels import LABELS
+from ..training.provenance import file_sha256, git_commit
 from .artifact_evaluators import (
+    CORE_MODEL_ORDER,
+    SIX_MODEL_ORDER,
     LoadedEvaluator,
     UnverifiedArtifactError,
     load_artifact_evaluators,
@@ -30,40 +32,17 @@ from .metrics import compute_metrics
 from .subsets import mixed_polarity_multi_aspect
 
 
-def _git_commit() -> str:
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        return "unknown"
-    return result.stdout.strip()
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
 def _evaluate_models(
     rows: list[AspectExample],
     evaluators: list[LoadedEvaluator],
+    model_keys: tuple[str, ...],
 ) -> tuple[dict[str, dict[str, object]], dict[str, list[str]], set[str]]:
     if not rows:
         raise ValueError("Official test evaluation requires retained examples")
-    if {evaluator.key for evaluator in evaluators} != {
-        "tfidf",
-        "target_lstm",
-        "atae_lstm",
-        "distilbert",
-    }:
-        raise ValueError("The comparison requires exactly the four A2 model families")
+    if tuple(evaluator.key for evaluator in evaluators) != model_keys:
+        raise ValueError(
+            f"The comparison requires evaluators in this order: {model_keys}"
+        )
 
     gold = [row.label for row in rows]
     mixed_ids = {row.sentence_id for row in mixed_polarity_multi_aspect(rows)}
@@ -109,6 +88,7 @@ def _evaluate_models(
                 "training_seconds": evaluator.training_seconds,
                 "artifact_bytes": evaluator.artifact_bytes,
                 "artifact_megabytes": evaluator.artifact_bytes / (1024 * 1024),
+                "parameter_count": evaluator.parameter_count,
                 "device": evaluator.device,
                 "load_seconds": evaluator.load_seconds,
                 "first_prediction_ms": first_seconds * 1000,
@@ -126,8 +106,8 @@ def _write_predictions(
     rows: list[AspectExample],
     predictions: dict[str, list[str]],
     mixed_ids: set[str],
+    model_keys: tuple[str, ...],
 ) -> None:
-    model_keys = ["tfidf", "target_lstm", "atae_lstm", "distilbert"]
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(
             handle,
@@ -176,10 +156,17 @@ def _error_analysis(
     rows: list[AspectExample],
     predictions: dict[str, list[str]],
     mixed_ids: set[str],
+    model_keys: tuple[str, ...],
     example_limit: int = 25,
 ) -> dict[str, object]:
-    review_only = ("tfidf", "target_lstm")
-    conditioned = ("atae_lstm", "distilbert")
+    review_only = tuple(
+        key
+        for key in ("tfidf", "target_lstm", "target_gru", "text_cnn")
+        if key in model_keys
+    )
+    conditioned = tuple(
+        key for key in ("atae_lstm", "distilbert") if key in model_keys
+    )
     categories: dict[str, list[dict[str, object]]] = {
         "conditioned_wins_on_mixed_subset": [],
         "review_only_wins_on_mixed_subset": [],
@@ -208,6 +195,10 @@ def _error_analysis(
                 categories[category].append(_example(row, index, predictions))
 
     return {
+        "model_groups": {
+            "review_only": list(review_only),
+            "aspect_conditioned": list(conditioned),
+        },
         "counts": counts,
         "example_limit_per_category": example_limit,
         "examples": categories,
@@ -217,22 +208,29 @@ def _error_analysis(
     }
 
 
-def _comparison_markdown(results: dict[str, dict[str, object]]) -> str:
+def _comparison_markdown(
+    results: dict[str, dict[str, object]],
+    model_keys: tuple[str, ...],
+) -> str:
     rows = [
-        "| Model | Test accuracy | Test macro-F1 | Mixed accuracy | Mixed macro-F1 | Training s | Cold ms | Warm ms/example | Artifact MB |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Model | Scope | Test accuracy | Test macro-F1 | Mixed accuracy | Mixed macro-F1 | Training s | Cold ms | Warm ms/example | Parameters | Artifact MB |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
-    for key in ("tfidf", "target_lstm", "atae_lstm", "distilbert"):
+    for key in model_keys:
         result = results[key]
         full = result["full_test"]
         mixed = result["mixed_polarity_multi_aspect"]
         efficiency = result["efficiency"]
         training = efficiency["training_seconds"]
         training_text = f"{training:.2f}" if training is not None else "n/a"
+        parameters = efficiency["parameter_count"]
+        parameters_text = f"{parameters:,}" if parameters is not None else "n/a"
         rows.append(
-            "| {name} | {accuracy:.4f} | {macro:.4f} | {mixed_accuracy:.4f} | "
-            "{mixed_macro:.4f} | {training} | {cold:.2f} | {warm:.3f} | {size:.2f} |".format(
+            "| {name} | {scope} | {accuracy:.4f} | {macro:.4f} | {mixed_accuracy:.4f} | "
+            "{mixed_macro:.4f} | {training} | {cold:.2f} | {warm:.3f} | "
+            "{parameters} | {size:.2f} |".format(
                 name=result["display_name"],
+                scope="exploratory" if key in {"target_gru", "text_cnn"} else "A2 core",
                 accuracy=full["accuracy"],
                 macro=full["macro_f1"],
                 mixed_accuracy=mixed["accuracy"],
@@ -240,20 +238,33 @@ def _comparison_markdown(results: dict[str, dict[str, object]]) -> str:
                 training=training_text,
                 cold=efficiency["cold_start_prediction_ms"],
                 warm=efficiency["warm_latency_ms_per_example"],
+                parameters=parameters_text,
                 size=efficiency["artifact_megabytes"],
             )
         )
     return "\n".join(rows) + "\n"
 
 
-def _plot_confusion_matrices(path: Path, results: dict[str, dict[str, object]]) -> None:
+def _plot_confusion_matrices(
+    path: Path,
+    results: dict[str, dict[str, object]],
+    model_keys: tuple[str, ...],
+) -> None:
     import matplotlib
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    figure, axes = plt.subplots(2, 2, figsize=(10, 9), constrained_layout=True)
-    for axis, key in zip(axes.flat, ("tfidf", "target_lstm", "atae_lstm", "distilbert")):
+    columns = 2 if len(model_keys) == 4 else 3
+    rows = math.ceil(len(model_keys) / columns)
+    figure, axes = plt.subplots(
+        rows,
+        columns,
+        figsize=(5 * columns, 4.5 * rows),
+        constrained_layout=True,
+        squeeze=False,
+    )
+    for axis, key in zip(axes.flat, model_keys):
         result = results[key]
         matrix = result["full_test"]["confusion_matrix"]
         image = axis.imshow(matrix, cmap="Blues")
@@ -266,6 +277,8 @@ def _plot_confusion_matrices(path: Path, results: dict[str, dict[str, object]]) 
             for column_index, value in enumerate(row):
                 axis.text(column_index, row_index, str(value), ha="center", va="center")
         figure.colorbar(image, ax=axis, fraction=0.046, pad=0.04)
+    for axis in tuple(axes.flat)[len(model_keys) :]:
+        axis.set_visible(False)
     figure.suptitle("ReviewPulse v3 — official Restaurants test confusion matrices")
     figure.savefig(path, dpi=180)
     plt.close(figure)
@@ -276,26 +289,58 @@ def run_evaluation(
     evaluators: list[LoadedEvaluator],
     output_dir: Path,
     *,
+    model_keys: tuple[str, ...] = CORE_MODEL_ORDER,
     dataset_metadata: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """Evaluate all models once and persist every A3 comparison artifact."""
+    if model_keys not in (CORE_MODEL_ORDER, SIX_MODEL_ORDER):
+        raise ValueError("Official comparison mode must contain four or six models")
     output_dir.mkdir(parents=True, exist_ok=True)
-    results, predictions, mixed_ids = _evaluate_models(rows, evaluators)
+    results, predictions, mixed_ids = _evaluate_models(
+        rows,
+        evaluators,
+        model_keys,
+    )
 
     predictions_path = output_dir / "predictions.csv"
-    _write_predictions(predictions_path, rows, predictions, mixed_ids)
-    error_analysis = _error_analysis(rows, predictions, mixed_ids)
+    _write_predictions(
+        predictions_path,
+        rows,
+        predictions,
+        mixed_ids,
+        model_keys,
+    )
+    error_analysis = _error_analysis(
+        rows,
+        predictions,
+        mixed_ids,
+        model_keys,
+    )
     (output_dir / "error_analysis.json").write_text(
         json.dumps(error_analysis, indent=2) + "\n",
         encoding="utf-8",
     )
-    comparison = _comparison_markdown(results)
+    comparison = _comparison_markdown(results, model_keys)
     (output_dir / "comparison.md").write_text(comparison, encoding="utf-8")
-    _plot_confusion_matrices(output_dir / "confusion_matrices.png", results)
+    _plot_confusion_matrices(
+        output_dir / "confusion_matrices.png",
+        results,
+        model_keys,
+    )
 
     report = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "git_commit": _git_commit(),
+        "git_commit": git_commit(),
+        "comparison_mode": (
+            "canonical_four_model"
+            if model_keys == CORE_MODEL_ORDER
+            else "exploratory_six_model"
+        ),
+        "model_order": list(model_keys),
+        "scope_note": (
+            "GRU and TextCNN are exploratory extensions; the submitted A2 "
+            "four-model comparison remains canonical."
+        ),
         "dataset": {
             "domain": "SemEval-2014 Task 4 Restaurants",
             "official_test_examples": len(rows),
@@ -317,7 +362,7 @@ def run_evaluation(
             "artifact_bytes": "recursive on-disk bytes for the loaded artifact",
         },
         "predictions_file": predictions_path.name,
-        "predictions_sha256": _sha256(predictions_path),
+        "predictions_sha256": file_sha256(predictions_path),
         "models": results,
         "error_analysis_file": "error_analysis.json",
         "comparison_file": "comparison.md",
@@ -343,7 +388,7 @@ def _device(value: str) -> torch.device | None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Evaluate the four ReviewPulse v3 models on the official Restaurants test set."
+        description="Evaluate the canonical four or exploratory six ReviewPulse v3 models."
     )
     parser.add_argument(
         "--data-dir",
@@ -351,10 +396,12 @@ def main() -> None:
         default=ABSA_DATA_DIR / "restaurants",
     )
     parser.add_argument("--artifact-dir", type=Path, default=ABSA_OUTPUTS_DIR)
+    parser.add_argument("--output-dir", type=Path)
     parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=ABSA_OUTPUTS_DIR / "evaluation",
+        "--models",
+        nargs="+",
+        choices=SIX_MODEL_ORDER,
+        default=list(CORE_MODEL_ORDER),
     )
     parser.add_argument("--device", choices=("auto", "cpu", "mps", "cuda"), default="auto")
     parser.add_argument("--recurrent-batch-size", type=int, default=64)
@@ -365,12 +412,24 @@ def main() -> None:
         help="Diagnostic only: allow pre-#91 artifacts with missing training metadata.",
     )
     args = parser.parse_args()
+    model_keys = tuple(args.models)
+    if model_keys not in (CORE_MODEL_ORDER, SIX_MODEL_ORDER):
+        parser.error(
+            "Use the canonical four-model order or the complete exploratory "
+            f"six-model order: {SIX_MODEL_ORDER}"
+        )
+    output_dir = args.output_dir or ABSA_OUTPUTS_DIR / (
+        "evaluation"
+        if model_keys == CORE_MODEL_ORDER
+        else "evaluation-six-model"
+    )
 
     test_path = args.data_dir / "restaurants_test.xml"
     rows = retained_examples(parse_aspect_examples(test_path, "test"))
     try:
         evaluators = load_artifact_evaluators(
             args.artifact_dir,
+            model_keys=model_keys,
             require_verified=not args.allow_unverified_artifacts,
             recurrent_batch_size=args.recurrent_batch_size,
             transformer_batch_size=args.transformer_batch_size,
@@ -381,14 +440,15 @@ def main() -> None:
     report = run_evaluation(
         rows,
         evaluators,
-        args.output_dir,
+        output_dir,
+        model_keys=model_keys,
         dataset_metadata={
             "test_file": str(test_path),
-            "test_sha256": _sha256(test_path),
+            "test_sha256": file_sha256(test_path),
         },
     )
-    print((args.output_dir / report["comparison_file"]).read_text())
-    print(f"Wrote reproducible evaluation artifacts to {args.output_dir}")
+    print((output_dir / report["comparison_file"]).read_text())
+    print(f"Wrote reproducible evaluation artifacts to {output_dir}")
 
 
 if __name__ == "__main__":

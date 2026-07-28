@@ -9,7 +9,7 @@ from transformers import AutoTokenizer
 from ..config import ABSA_OUTPUTS_DIR
 from ..data.splits import split_official_data
 from ..evaluation import compute_metrics
-from ..labels import LABEL_TO_ID
+from ..labels import ID_TO_LABEL, LABEL_TO_ID
 from ..models.distilbert import ABSADistilBERT
 from ..tokenization.bert_dataset import AspectPairDataset
 from .common import (
@@ -57,6 +57,8 @@ def train_distilbert(
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     active_device = device or preferred_device()
     model = ABSADistilBERT.from_pretrained_absa(model_name).to(active_device)
+    model.config.id2label = dict(ID_TO_LABEL)
+    model.config.label2id = dict(LABEL_TO_ID)
     loader = DataLoader(
         AspectPairDataset(tokenizer, splits.train, max_length=max_length),
         batch_size=batch_size,

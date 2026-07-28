@@ -14,7 +14,8 @@ from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
 
 from ..data.schema import AspectExample
-from ..labels import ID_TO_LABEL
+from ..labels import ID_TO_LABEL, LABELS
+from ..model_order import CORE_MODEL_ORDER, SIX_MODEL_ORDER
 from ..models.atae_lstm import ATAELSTM
 from ..models.distilbert import ABSADistilBERT
 from ..models.target_gru import TargetAgnosticGRU
@@ -32,6 +33,14 @@ MODEL_NAMES = {
     "atae_lstm": "ATAE-LSTM",
     "distilbert": "DistilBERT sentence-pair",
 }
+RUN_RECORD_FILES = {
+    "tfidf": "tfidf_baseline_metrics.json",
+    "target_lstm": "target_lstm_metrics.json",
+    "target_gru": "target_gru_metrics.json",
+    "text_cnn": "text_cnn_metrics.json",
+    "atae_lstm": "atae_lstm_metrics.json",
+    "distilbert": "distilbert_metrics.json",
+}
 
 
 class UnverifiedArtifactError(ValueError):
@@ -46,6 +55,7 @@ class LoadedEvaluator:
     display_name: str
     device: str
     artifact_bytes: int
+    parameter_count: int | None
     training_seconds: float | None
     training_config: dict[str, object]
     provenance: dict[str, object]
@@ -84,15 +94,11 @@ def _training_seconds(metadata: dict[str, object], source: Path, require_verifie
 def _read_run_records(
     artifact_dir: Path,
     require_verified: bool,
+    model_keys: tuple[str, ...],
 ) -> dict[str, dict[str, object]]:
-    filenames = {
-        "tfidf": "tfidf_baseline_metrics.json",
-        "target_lstm": "target_lstm_metrics.json",
-        "atae_lstm": "atae_lstm_metrics.json",
-        "distilbert": "distilbert_metrics.json",
-    }
     records: dict[str, dict[str, object]] = {}
-    for key, filename in filenames.items():
+    for key in model_keys:
+        filename = RUN_RECORD_FILES[key]
         path = artifact_dir / filename
         record = json.loads(path.read_text())
         _training_seconds(record, path, require_verified)
@@ -104,11 +110,12 @@ def _read_run_records(
 
     if require_verified:
         identity_keys = ("git_commit", "train_sha256", "test_sha256")
-        reference = _provenance(records["tfidf"])
+        reference_key = model_keys[0]
+        reference = _provenance(records[reference_key])
         missing = [key for key in identity_keys if key not in reference]
         if missing:
             raise UnverifiedArtifactError(
-                f"TF-IDF provenance is missing comparison identity: {', '.join(missing)}"
+                f"{reference_key} provenance is missing comparison identity: {', '.join(missing)}"
             )
         identity = {key: reference[key] for key in identity_keys}
         seeds = set()
@@ -122,9 +129,39 @@ def _read_run_records(
             seeds.add(_config(record).get("seed"))
         if len(seeds) != 1 or None in seeds:
             raise UnverifiedArtifactError(
-                f"The four artifacts do not share one explicit training seed: {sorted(seeds, key=str)}"
+                "The selected artifacts do not share one explicit training seed: "
+                f"{sorted(seeds, key=str)}"
             )
     return records
+
+
+def _normalise_model_keys(model_keys: Sequence[str]) -> tuple[str, ...]:
+    keys = tuple(model_keys)
+    invalid = sorted(set(keys) - set(SIX_MODEL_ORDER))
+    if invalid:
+        raise ValueError(f"Unknown evaluation models: {invalid}")
+    if not keys or len(set(keys)) != len(keys):
+        raise ValueError("Evaluation models must be non-empty and unique")
+    expected = tuple(key for key in SIX_MODEL_ORDER if key in set(keys))
+    if keys != expected:
+        raise ValueError(f"Evaluation models must follow this order: {expected}")
+    return keys
+
+
+def _parameter_count(model: torch.nn.Module) -> int:
+    return sum(parameter.numel() for parameter in model.parameters())
+
+
+def _assert_labels(
+    labels: object,
+    source: Path,
+    require_verified: bool,
+) -> None:
+    actual = list(labels) if labels is not None else []
+    if require_verified and actual != list(LABELS):
+        raise UnverifiedArtifactError(
+            f"{source} label order must be {list(LABELS)}"
+        )
 
 
 def _config(record: dict[str, object]) -> dict[str, object]:
@@ -170,6 +207,9 @@ def _load_tfidf(
         require_verified,
     )
     model = joblib.load(model_path)
+    _assert_labels(model.classes_, model_path, require_verified)
+    classifier = model.named_steps["classifier"]
+    parameter_count = int(classifier.coef_.size + classifier.intercept_.size)
     load_seconds = perf_counter() - started
 
     def predict(rows: Sequence[AspectExample]) -> list[str]:
@@ -180,6 +220,7 @@ def _load_tfidf(
         display_name=MODEL_NAMES["tfidf"],
         device="cpu",
         artifact_bytes=artifact_size(model_path),
+        parameter_count=parameter_count,
         training_seconds=training_seconds,
         training_config=_config(record),
         provenance=_provenance(record),
@@ -197,6 +238,7 @@ def _load_target_lstm(
     path = artifact_dir / "target_lstm.pt"
     started = perf_counter()
     artifact = torch.load(path, map_location="cpu", weights_only=True)
+    _assert_labels(artifact.get("labels"), path, require_verified)
     training_seconds = _training_seconds(record, path, require_verified)
     _assert_embedded_metadata(artifact, record, path, require_verified)
     vocab = artifact["vocab"]
@@ -218,6 +260,7 @@ def _load_target_lstm(
         display_name=MODEL_NAMES["target_lstm"],
         device="cpu",
         artifact_bytes=artifact_size(path),
+        parameter_count=_parameter_count(model),
         training_seconds=training_seconds,
         training_config=_config(record),
         provenance=_provenance(record),
@@ -235,6 +278,7 @@ def _load_target_gru(
     path = artifact_dir / "target_gru.pt"
     started = perf_counter()
     artifact = torch.load(path, map_location="cpu", weights_only=True)
+    _assert_labels(artifact.get("labels"), path, require_verified)
     training_seconds = _training_seconds(record, path, require_verified)
     _assert_embedded_metadata(artifact, record, path, require_verified)
     vocab = artifact["vocab"]
@@ -271,6 +315,7 @@ def _load_target_gru(
         display_name=MODEL_NAMES["target_gru"],
         device="cpu",
         artifact_bytes=artifact_size(path),
+        parameter_count=_parameter_count(model),
         training_seconds=training_seconds,
         training_config=config,
         provenance=_provenance(record),
@@ -313,6 +358,7 @@ def _load_text_cnn(
     path = artifact_dir / "text_cnn.pt"
     started = perf_counter()
     artifact = torch.load(path, map_location="cpu", weights_only=True)
+    _assert_labels(artifact.get("labels"), path, require_verified)
     training_seconds = _training_seconds(record, path, require_verified)
     _assert_embedded_metadata(artifact, record, path, require_verified)
     vocab = artifact["vocab"]
@@ -350,6 +396,7 @@ def _load_text_cnn(
         display_name=MODEL_NAMES["text_cnn"],
         device="cpu",
         artifact_bytes=artifact_size(path),
+        parameter_count=_parameter_count(model),
         training_seconds=training_seconds,
         training_config=config,
         provenance=_provenance(record),
@@ -392,6 +439,7 @@ def _load_atae_lstm(
     path = artifact_dir / "atae_lstm.pt"
     started = perf_counter()
     artifact = torch.load(path, map_location="cpu", weights_only=True)
+    _assert_labels(artifact.get("labels"), path, require_verified)
     training_seconds = _training_seconds(record, path, require_verified)
     _assert_embedded_metadata(artifact, record, path, require_verified)
     vocab = artifact["vocab"]
@@ -416,6 +464,7 @@ def _load_atae_lstm(
         display_name=MODEL_NAMES["atae_lstm"],
         device="cpu",
         artifact_bytes=artifact_size(path),
+        parameter_count=_parameter_count(model),
         training_seconds=training_seconds,
         training_config=_config(record),
         provenance=_provenance(record),
@@ -430,6 +479,7 @@ def _load_distilbert(
     require_verified: bool,
     batch_size: int,
     device: torch.device,
+    require_explicit_labels: bool,
 ) -> LoadedEvaluator:
     path = artifact_dir / "distilbert"
     run_path = path / "training_run.json"
@@ -446,6 +496,12 @@ def _load_distilbert(
     _assert_embedded_metadata(metadata, record, run_path, require_verified)
     tokenizer = AutoTokenizer.from_pretrained(path, local_files_only=True)
     model = ABSADistilBERT.from_pretrained(path, local_files_only=True).to(device)
+    if require_explicit_labels:
+        labels = [
+            model.config.id2label[index]
+            for index in range(model.config.num_labels)
+        ]
+        _assert_labels(labels, path / "config.json", require_verified)
     model.eval()
     load_seconds = perf_counter() - started
 
@@ -467,6 +523,7 @@ def _load_distilbert(
         display_name=MODEL_NAMES["distilbert"],
         device=str(device),
         artifact_bytes=artifact_size(path),
+        parameter_count=_parameter_count(model),
         training_seconds=training_seconds,
         training_config=_config(record),
         provenance=_provenance(record),
@@ -478,34 +535,61 @@ def _load_distilbert(
 def load_artifact_evaluators(
     artifact_dir: Path,
     *,
+    model_keys: Sequence[str] = CORE_MODEL_ORDER,
     require_verified: bool = True,
     recurrent_batch_size: int = 64,
     transformer_batch_size: int = 16,
     device: torch.device | None = None,
 ) -> list[LoadedEvaluator]:
-    """Load all four v3 models in the fixed A2 comparison order."""
+    """Load a verified ordered subset while preserving the canonical default."""
     if recurrent_batch_size < 1 or transformer_batch_size < 1:
         raise ValueError("Evaluation batch sizes must be at least 1")
-    records = _read_run_records(artifact_dir, require_verified)
-    return [
-        _load_tfidf(artifact_dir, records["tfidf"], require_verified),
-        _load_target_lstm(
-            artifact_dir,
-            records["target_lstm"],
-            require_verified,
-            recurrent_batch_size,
-        ),
-        _load_atae_lstm(
-            artifact_dir,
-            records["atae_lstm"],
-            require_verified,
-            recurrent_batch_size,
-        ),
-        _load_distilbert(
-            artifact_dir,
-            records["distilbert"],
-            require_verified,
-            transformer_batch_size,
-            device or preferred_device(),
-        ),
-    ]
+    keys = _normalise_model_keys(model_keys)
+    records = _read_run_records(artifact_dir, require_verified, keys)
+    loaded: list[LoadedEvaluator] = []
+    for key in keys:
+        if key == "tfidf":
+            evaluator = _load_tfidf(
+                artifact_dir,
+                records[key],
+                require_verified,
+            )
+        elif key == "target_lstm":
+            evaluator = _load_target_lstm(
+                artifact_dir,
+                records[key],
+                require_verified,
+                recurrent_batch_size,
+            )
+        elif key == "target_gru":
+            evaluator = _load_target_gru(
+                artifact_dir,
+                records[key],
+                require_verified,
+                recurrent_batch_size,
+            )
+        elif key == "text_cnn":
+            evaluator = _load_text_cnn(
+                artifact_dir,
+                records[key],
+                require_verified,
+                recurrent_batch_size,
+            )
+        elif key == "atae_lstm":
+            evaluator = _load_atae_lstm(
+                artifact_dir,
+                records[key],
+                require_verified,
+                recurrent_batch_size,
+            )
+        else:
+            evaluator = _load_distilbert(
+                artifact_dir,
+                records[key],
+                require_verified,
+                transformer_batch_size,
+                device or preferred_device(),
+                require_explicit_labels=keys == SIX_MODEL_ORDER,
+            )
+        loaded.append(evaluator)
+    return loaded

@@ -18,7 +18,7 @@ def render_introduction() -> None:
     st.table([
         {"Version": "v1.0", "Subject": "ISY503", "Capability": "Binary review sentiment", "Models": "TF-IDF + BiLSTM"},
         {"Version": "v2.3.0", "Subject": "ISY503", "Capability": "Hardened review sentiment", "Models": "TF-IDF + BiLSTM + DistilBERT"},
-        {"Version": "v3.0.0", "Subject": "DLE602", "Capability": "Three-class aspect sentiment", "Models": "TF-IDF + LSTM + ATAE-LSTM + DistilBERT"},
+        {"Version": "v3.0.0", "Subject": "DLE602", "Capability": "Three-class aspect sentiment", "Models": "4 core + exploratory GRU/CNN"},
     ])
 
     st.subheader("Choose a workspace")
