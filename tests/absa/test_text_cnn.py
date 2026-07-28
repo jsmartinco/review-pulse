@@ -3,6 +3,7 @@ import json
 import pytest
 import torch
 
+from scripts.train_selected_text_cnn import selected_configuration
 from src.absa.data.schema import AspectExample
 from src.absa.evaluation import compute_metrics, mixed_polarity_multi_aspect
 from src.absa.evaluation.artifact_evaluators import load_text_cnn_evaluator
@@ -13,6 +14,7 @@ from src.absa.inference.predictors import (
 )
 from src.absa.models.text_cnn import TextCNN
 from src.absa.tokenization.sequence import build_vocab, encode, tokens
+from src.absa.training.provenance import file_sha256
 from src.absa.training.text_cnn import save_artifact, train_text_cnn
 
 
@@ -271,3 +273,62 @@ def test_text_cnn_configuration_selection_does_not_evaluate_official_test() -> N
     assert result["test"] == {
         "status": "not_evaluated_during_configuration_selection"
     }
+
+
+def test_selected_text_cnn_training_uses_verified_gate_values(tmp_path) -> None:
+    data_dir = tmp_path / "restaurants"
+    data_dir.mkdir()
+    train_path = data_dir / "restaurants_train.xml"
+    test_path = data_dir / "restaurants_test.xml"
+    train_path.write_text("<train />")
+    test_path.write_text("<test />")
+    selection_path = tmp_path / "selection.json"
+    selection_path.write_text(
+        json.dumps(
+            {
+                "official_test_evaluated": False,
+                "candidates": [
+                    {
+                        "filter_widths": [2, 3, 4],
+                        "num_filters": 64,
+                    }
+                ],
+                "selected": {
+                    "filter_widths": [2, 3, 4],
+                    "num_filters": 64,
+                },
+                "provenance": {
+                    "git_commit": "fixture-commit",
+                    "train_sha256": file_sha256(train_path),
+                    "test_sha256": file_sha256(test_path),
+                },
+            }
+        )
+    )
+
+    assert selected_configuration(
+        selection_path,
+        data_dir,
+        expected_commit="fixture-commit",
+    ) == ((2, 3, 4), 64)
+
+
+def test_selected_text_cnn_training_rejects_test_evaluated_gate(tmp_path) -> None:
+    selection_path = tmp_path / "selection.json"
+    selection_path.write_text(
+        json.dumps(
+            {
+                "official_test_evaluated": True,
+                "selected": {
+                    "filter_widths": [3, 4, 5],
+                    "num_filters": 100,
+                },
+            }
+        )
+    )
+    with pytest.raises(ValueError, match="must not evaluate"):
+        selected_configuration(
+            selection_path,
+            tmp_path,
+            expected_commit="fixture",
+        )

@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
-import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -19,6 +17,7 @@ from .baseline import save_artifact as save_baseline
 from .baseline import train_baseline
 from .distilbert import preferred_device, save_artifact as save_distilbert
 from .distilbert import train_distilbert
+from .provenance import file_sha256, git_commit
 from .target_lstm import save_artifact as save_target_lstm
 from .target_lstm import train_target_lstm
 from .target_gru import save_artifact as save_target_gru
@@ -40,28 +39,6 @@ REQUIRED_PROVENANCE_FIELDS = frozenset(
         "test_sha256",
     }
 )
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def _git_commit() -> str:
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        return "unknown"
-    return result.stdout.strip()
-
 
 def _device(value: str) -> torch.device:
     if value == "auto":
@@ -227,12 +204,12 @@ def main() -> None:
     train_path = args.data_dir / "restaurants_train.xml"
     test_path = args.data_dir / "restaurants_test.xml"
     provenance = {
-        "git_commit": _git_commit(),
+        "git_commit": git_commit(),
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "train_file": str(train_path),
-        "train_sha256": _sha256(train_path),
+        "train_sha256": file_sha256(train_path),
         "test_file": str(test_path),
-        "test_sha256": _sha256(test_path),
+        "test_sha256": file_sha256(test_path),
     }
     completed = train_models(
         parse_aspect_examples(train_path, "train"),

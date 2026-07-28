@@ -50,11 +50,7 @@ Run the bounded gate, train the selected candidate and verify a clean load:
 ```bash
 .venv/bin/python scripts/select_text_cnn_config.py
 
-.venv/bin/python -m src.absa.training.runner \
-  --models text_cnn \
-  --cnn-filter-widths 3 4 5 \
-  --cnn-num-filters 100 \
-  --device cpu
+.venv/bin/python scripts/train_selected_text_cnn.py --device cpu
 
 .venv/bin/python scripts/smoke_text_cnn.py
 ```
@@ -69,7 +65,7 @@ outputs/absa/text_cnn_metrics.json
 
 `load_text_cnn_evaluator()` exposes the common `LoadedEvaluator` contract. Full-test and mixed-polarity metrics therefore use the existing label order, subset definition and metric functions; six-model shared outputs remain deferred to #96.
 
-The widths/count shown in the training command are the defaults. Replace them with the `selected` values from `text_cnn_config_search.json` when the gate selects another candidate.
+The selected-training wrapper verifies that the gate and training use the same Git commit and dataset checksums, then forwards the exact `selected` filter widths/count from `text_cnn_config_search.json` to the common runner.
 
 ## Verified #95 candidate run
 

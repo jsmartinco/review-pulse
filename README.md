@@ -220,7 +220,7 @@ The optional GRU and TextCNN candidates remain outside those canonical four-mode
 .venv/bin/python scripts/smoke_target_gru.py
 
 .venv/bin/python scripts/select_text_cnn_config.py
-.venv/bin/python -m src.absa.training.runner --models text_cnn --device cpu
+.venv/bin/python scripts/train_selected_text_cnn.py --device cpu
 .venv/bin/python scripts/smoke_text_cnn.py
 ```
 

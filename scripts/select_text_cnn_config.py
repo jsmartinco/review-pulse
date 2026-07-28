@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
-import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,6 +14,7 @@ if str(REPOSITORY_ROOT) not in sys.path:
 
 from src.absa.config import ABSA_DATA_DIR, ABSA_OUTPUTS_DIR
 from src.absa.data.parser import parse_aspect_examples
+from src.absa.training.provenance import file_sha256, git_commit
 from src.absa.training.text_cnn import train_text_cnn
 
 
@@ -24,28 +23,6 @@ CANDIDATES = (
     {"filter_widths": (3, 4, 5), "num_filters": 64},
     {"filter_widths": (3, 4, 5), "num_filters": 100},
 )
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def _git_commit() -> str:
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        return "unknown"
-    return result.stdout.strip()
-
 
 def main() -> None:
     """Select one bounded configuration without evaluating the official test."""
@@ -113,11 +90,11 @@ def main() -> None:
         "candidate_limit": len(CANDIDATES),
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "provenance": {
-            "git_commit": _git_commit(),
+            "git_commit": git_commit(),
             "train_file": str(train_path),
-            "train_sha256": _sha256(train_path),
+            "train_sha256": file_sha256(train_path),
             "test_file": str(test_path),
-            "test_sha256": _sha256(test_path),
+            "test_sha256": file_sha256(test_path),
         },
         "candidates": records,
         "selected": {
