@@ -6,7 +6,7 @@ The target-agnostic GRU is the fifth-model candidate mapped in issue #94. It is 
 
 Like the target-agnostic LSTM, the GRU receives only the review. `predict_aspects()` repeats the same review-level prediction for each supplied aspect, making its expected limitation on mixed-polarity multi-aspect sentences explicit. The model reports token evidence as unsupported.
 
-The canonical four-model training command, evaluation outputs and Streamlit options remain unchanged until the supplemental integration in #96.
+The canonical four-model training command and evaluation outputs remain unchanged. Issue #96 adds the GRU only through an explicit supplemental mode and exposes it as exploratory in Streamlit.
 
 ## Controlled configuration
 
@@ -62,7 +62,7 @@ outputs/absa/target_gru.pt
 outputs/absa/target_gru_metrics.json
 ```
 
-`load_target_gru_evaluator()` exposes the same `LoadedEvaluator` contract used by the core models. Full-test and mixed-polarity metrics therefore use the existing label order, subset definition and metric functions; the supplemental multi-model files remain deferred to #96.
+`load_target_gru_evaluator()` exposes the same `LoadedEvaluator` contract used by the core models. Full-test and mixed-polarity metrics therefore use the existing label order, subset definition and metric functions. Issue #96 now writes the supplemental multi-model files separately from the canonical output.
 
 ## Verified #94 candidate run
 
@@ -80,7 +80,7 @@ The clean-load candidate was trained on CPU with seed 42 from commit `bdea54d`, 
 
 At matched dimensions, the GRU used 10.31% fewer parameters, produced a 9.99% smaller artifact and trained 17.83% faster in the recorded runs. These percentages were calculated from the unrounded records: 571,291 versus 512,411 parameters, 2,354,886 versus 2,119,733 bytes and 9.324929834 versus 7.662553375 seconds. Its overall metrics were slightly stronger, but its mixed-polarity metrics were slightly weaker. This is a useful negative boundary rather than a contradiction: changing the recurrent cell does not solve the missing-aspect limitation shared by both review-only models.
 
-The LSTM and GRU candidate artifacts were generated from different reviewed source commits because the GRU did not exist in the #84 commit. The final supplemental comparison in #96 must regenerate all six artifacts from one frozen commit before using cross-model timing as a final report claim.
+The earlier LSTM and GRU candidate artifacts came from different reviewed source commits because the GRU did not exist in the #84 commit. Issue #96 resolved that limitation by regenerating all six artifacts from frozen commit `cef08fa`; the final shared evidence is recorded in `six-model-results.md`.
 
 ## Reporting guardrails
 

@@ -236,7 +236,7 @@ Regenerate and evaluate the explicit six-model supplement from one frozen commit
   --device auto
 ```
 
-This writes separate evidence below `outputs/absa/evaluation-six-model/`; the default four-model commands and `outputs/absa/evaluation/` remain unchanged.
+This writes separate evidence below `outputs/absa/evaluation-six-model/`; the default four-model commands and `outputs/absa/evaluation/` remain unchanged. The verified same-commit result and A3 interpretation are recorded in `docs/dle602-a3/six-model-results.md`.
 
 ## Inference API
 
