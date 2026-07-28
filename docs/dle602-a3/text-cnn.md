@@ -71,6 +71,32 @@ outputs/absa/text_cnn_metrics.json
 
 The widths/count shown in the training command are the defaults. Replace them with the `selected` values from `text_cnn_config_search.json` when the gate selects another candidate.
 
+## Verified #95 candidate run
+
+The configuration gate and final candidate were run on CPU with seed 42 from commit `4e66f7a`. All three gate candidates used the same Restaurants checksums and grouped development split, and `official_test_evaluated` remained `false` until the winning configuration was locked.
+
+| Widths × filters | Development macro-F1 | Gate time | Parameters |
+|---|---:|---:|---:|
+| `(2,3,4) × 64` | 0.4309 | 8.74 s | 393,371 |
+| `(3,4,5) × 64` | 0.3776 | 10.47 s | 412,571 |
+| **`(3,4,5) × 100`** | **0.4722** | 13.60 s | 456,203 |
+
+The selected configuration was then trained for the full eight-epoch budget. Best development macro-F1 occurred at epoch 6. No material within-run overfitting was detected, so the recorded diagnostic does not recommend the multi-seed contingency.
+
+| Measure | Target LSTM #84 | Target GRU #94 | TextCNN #95 |
+|---|---:|---:|---:|
+| Full-test accuracy | 0.6688 | 0.6750 | **0.6893** |
+| Full-test macro-F1 | 0.4326 | **0.4603** | 0.4498 |
+| Mixed accuracy | **0.4167** | 0.4079 | **0.4167** |
+| Mixed macro-F1 | **0.3264** | 0.3156 | 0.3106 |
+| CPU training time | 9.32 s | **7.66 s** | 26.73 s |
+| Parameters | 571,291 | 512,411 | **456,203** |
+| Artifact size | 2.25 MB | 2.02 MB | **1.81 MB** |
+
+The CNN produced the strongest candidate accuracy and the smallest review-only neural artifact, but it did not improve macro-F1 and trained more slowly in these separate CPU runs. Its mixed-polarity neutral recall was zero. This result is retained because it demonstrates that a non-recurrent sentence encoder still cannot resolve aspect-specific contradictions merely by changing architecture.
+
+The LSTM, GRU and CNN values above were generated from different reviewed source commits. Issue #96 must regenerate all six artifacts from one frozen commit before presenting cross-model timing or efficiency as a final report claim.
+
 ## Reproducibility and artifacts
 
 The trainer uses the #91 controls:
