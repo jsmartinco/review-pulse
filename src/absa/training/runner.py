@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
-import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -19,14 +17,17 @@ from .baseline import save_artifact as save_baseline
 from .baseline import train_baseline
 from .distilbert import preferred_device, save_artifact as save_distilbert
 from .distilbert import train_distilbert
+from .provenance import file_sha256, git_commit
 from .target_lstm import save_artifact as save_target_lstm
 from .target_lstm import train_target_lstm
 from .target_gru import save_artifact as save_target_gru
 from .target_gru import train_target_gru
+from .text_cnn import save_artifact as save_text_cnn
+from .text_cnn import train_text_cnn
 
 
 MODEL_ORDER = ("tfidf", "target_lstm", "atae_lstm", "distilbert")
-OPTIONAL_MODEL_ORDER = ("target_gru",)
+OPTIONAL_MODEL_ORDER = ("target_gru", "text_cnn")
 AVAILABLE_MODELS = MODEL_ORDER + OPTIONAL_MODEL_ORDER
 REQUIRED_PROVENANCE_FIELDS = frozenset(
     {
@@ -38,28 +39,6 @@ REQUIRED_PROVENANCE_FIELDS = frozenset(
         "test_sha256",
     }
 )
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def _git_commit() -> str:
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        return "unknown"
-    return result.stdout.strip()
-
 
 def _device(value: str) -> torch.device:
     if value == "auto":
@@ -98,8 +77,12 @@ def train_models(
     models: tuple[str, ...] = MODEL_ORDER,
     seed: int = 42,
     lstm_epochs: int = 8,
+    cnn_epochs: int = 8,
+    cnn_filter_widths: tuple[int, ...] = (3, 4, 5),
+    cnn_num_filters: int = 100,
     distilbert_epochs: int = 2,
     recurrent_batch_size: int = 64,
+    cnn_batch_size: int = 64,
     transformer_batch_size: int = 8,
     patience: int = 2,
     distilbert_device: torch.device | None = None,
@@ -141,6 +124,20 @@ def train_models(
         )
         completed["target_gru"] = _record(metrics, common_provenance)
         save_target_gru(model, vocab, completed["target_gru"], output_dir)
+
+    if "text_cnn" in models:
+        model, vocab, metrics = train_text_cnn(
+            train_rows,
+            test_rows,
+            epochs=cnn_epochs,
+            batch_size=cnn_batch_size,
+            seed=seed,
+            patience=patience,
+            filter_widths=cnn_filter_widths,
+            num_filters=cnn_num_filters,
+        )
+        completed["text_cnn"] = _record(metrics, common_provenance)
+        save_text_cnn(model, vocab, completed["text_cnn"], output_dir)
 
     if "atae_lstm" in models:
         model, vocab, metrics = train_atae_lstm(
@@ -188,8 +185,17 @@ def main() -> None:
     )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--lstm-epochs", type=int, default=8)
+    parser.add_argument("--cnn-epochs", type=int, default=8)
+    parser.add_argument(
+        "--cnn-filter-widths",
+        type=int,
+        nargs="+",
+        default=[3, 4, 5],
+    )
+    parser.add_argument("--cnn-num-filters", type=int, default=100)
     parser.add_argument("--distilbert-epochs", type=int, default=2)
     parser.add_argument("--recurrent-batch-size", type=int, default=64)
+    parser.add_argument("--cnn-batch-size", type=int, default=64)
     parser.add_argument("--transformer-batch-size", type=int, default=8)
     parser.add_argument("--patience", type=int, default=2)
     parser.add_argument("--device", choices=("auto", "cpu", "mps", "cuda"), default="auto")
@@ -198,12 +204,12 @@ def main() -> None:
     train_path = args.data_dir / "restaurants_train.xml"
     test_path = args.data_dir / "restaurants_test.xml"
     provenance = {
-        "git_commit": _git_commit(),
+        "git_commit": git_commit(),
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "train_file": str(train_path),
-        "train_sha256": _sha256(train_path),
+        "train_sha256": file_sha256(train_path),
         "test_file": str(test_path),
-        "test_sha256": _sha256(test_path),
+        "test_sha256": file_sha256(test_path),
     }
     completed = train_models(
         parse_aspect_examples(train_path, "train"),
@@ -212,8 +218,12 @@ def main() -> None:
         models=tuple(args.models),
         seed=args.seed,
         lstm_epochs=args.lstm_epochs,
+        cnn_epochs=args.cnn_epochs,
+        cnn_filter_widths=tuple(args.cnn_filter_widths),
+        cnn_num_filters=args.cnn_num_filters,
         distilbert_epochs=args.distilbert_epochs,
         recurrent_batch_size=args.recurrent_batch_size,
+        cnn_batch_size=args.cnn_batch_size,
         transformer_batch_size=args.transformer_batch_size,
         patience=args.patience,
         distilbert_device=_device(args.device),

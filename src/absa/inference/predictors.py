@@ -22,6 +22,7 @@ from ..models.atae_lstm import ATAELSTM
 from ..models.distilbert import ABSADistilBERT
 from ..models.target_gru import TargetAgnosticGRU
 from ..models.target_lstm import TargetAgnosticLSTM
+from ..models.text_cnn import TextCNN
 from ..tokenization.sequence import encode
 
 
@@ -33,6 +34,7 @@ MODEL_OPTIONS = {
 }
 OPTIONAL_MODEL_OPTIONS = {
     "absa_target_gru": "GRU review-only (exploratory)",
+    "absa_text_cnn": "Text CNN review-only (exploratory)",
 }
 ALL_MODEL_OPTIONS = {**MODEL_OPTIONS, **OPTIONAL_MODEL_OPTIONS}
 
@@ -123,6 +125,45 @@ class TargetGruAspectPredictor:
         )
 
 
+class TextCnnAspectPredictor:
+    """Clean-load adapter for the optional review-only TextCNN artifact."""
+
+    def __init__(
+        self,
+        path: Path = ABSA_OUTPUTS_DIR / "text_cnn.pt",
+    ) -> None:
+        artifact = torch.load(path, map_location="cpu", weights_only=True)
+        self.vocab = artifact["vocab"]
+        config = artifact["config"]
+        self.max_length = int(config["max_length"])
+        self.model = TextCNN(
+            len(self.vocab),
+            embedding_dim=int(config["embedding_dim"]),
+            num_filters=int(config["num_filters"]),
+            filter_widths=tuple(config["filter_widths"]),
+            dropout=float(config["dropout"]),
+        )
+        self.model.load_state_dict(artifact["state_dict"])
+        self.model.eval()
+
+    def predict(self, review: str, aspect: str, model_name: str) -> dict:
+        """Return the repeated review-only prediction for one supplied aspect."""
+        with torch.no_grad():
+            logits = self.model(
+                encode(
+                    [review],
+                    self.vocab,
+                    self.max_length,
+                )
+            )
+        return _payload(
+            aspect,
+            logits,
+            model_name,
+            unsupported_evidence(ALL_MODEL_OPTIONS[model_name]),
+        )
+
+
 class AtaeLstmAspectPredictor:
     def __init__(self, path: Path = ABSA_OUTPUTS_DIR / "atae_lstm.pt") -> None:
         artifact = torch.load(path, map_location="cpu", weights_only=True)
@@ -175,6 +216,7 @@ def get_predictor(model_name: str):
         "absa_tfidf": TfidfAspectPredictor,
         "absa_target_lstm": TargetLstmAspectPredictor,
         "absa_target_gru": TargetGruAspectPredictor,
+        "absa_text_cnn": TextCnnAspectPredictor,
         "absa_atae_lstm": AtaeLstmAspectPredictor,
         "absa_distilbert": DistilBertAspectPredictor,
     }

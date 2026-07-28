@@ -29,6 +29,7 @@ def test_predict_aspects_preserves_visible_review_whitespace_for_offsets():
 def test_predictor_registry_rejects_unknown_model_without_loading_an_artifact():
     assert "absa_atae_lstm" in MODEL_OPTIONS
     assert "absa_target_gru" in OPTIONAL_MODEL_OPTIONS
+    assert "absa_text_cnn" in OPTIONAL_MODEL_OPTIONS
     try:
         get_predictor("not-a-model")
     except ValueError as error:
