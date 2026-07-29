@@ -12,7 +12,7 @@ Source and documentation only:
   --report /path/to/DLE602_A3_Report.pdf
 ```
 
-Source plus TF-IDF, LSTM, GRU, TextCNN and ATAE-LSTM:
+Source plus the legacy v2 artifacts and the five lightweight v3 models (TF-IDF, LSTM, GRU, TextCNN and ATAE-LSTM):
 
 ```bash
 .venv/bin/python scripts/build_a3_package.py \
@@ -20,7 +20,7 @@ Source plus TF-IDF, LSTM, GRU, TextCNN and ATAE-LSTM:
   --report /path/to/DLE602_A3_Report.pdf
 ```
 
-Source plus all six v3 artifacts, including DistilBERT:
+Source plus the legacy v2 artifacts and all six v3 models, including DistilBERT:
 
 ```bash
 .venv/bin/python scripts/build_a3_package.py \

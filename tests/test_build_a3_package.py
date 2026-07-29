@@ -12,6 +12,12 @@ from scripts.build_a3_package import (
     validate_entries,
 )
 
+REPO = Path(__file__).resolve().parents[1]
+requires_git_checkout = pytest.mark.skipif(
+    not (REPO / ".git").exists(),
+    reason="Package-builder integration requires Git checkout metadata",
+)
+
 
 def test_validate_entries_rejects_restricted_xml(tmp_path: Path) -> None:
     source = tmp_path / "restaurants.xml"
@@ -37,13 +43,13 @@ def test_validate_entries_rejects_duplicate_paths(tmp_path: Path) -> None:
         validate_entries([entry, entry])
 
 
+@requires_git_checkout
 def test_source_package_is_deterministic_and_allowlisted(tmp_path: Path) -> None:
-    repo = Path(__file__).resolve().parents[1]
     first = tmp_path / "first.zip"
     second = tmp_path / "second.zip"
 
-    first_manifest = build_package(repo, first, "none", require_clean=False)
-    second_manifest = build_package(repo, second, "none", require_clean=False)
+    first_manifest = build_package(REPO, first, "none", require_clean=False)
+    second_manifest = build_package(REPO, second, "none", require_clean=False)
 
     assert first.read_bytes() == second.read_bytes()
     assert first_manifest["archive"]["sha256"] == second_manifest["archive"]["sha256"]
@@ -64,13 +70,13 @@ def test_source_package_is_deterministic_and_allowlisted(tmp_path: Path) -> None
     assert manifest["source_commit"] == first_manifest["source_commit"]
 
 
+@requires_git_checkout
 def test_output_collision_preserves_source() -> None:
-    repo = Path(__file__).resolve().parents[1]
-    readme = repo / "README.md"
+    readme = REPO / "README.md"
     original = readme.read_bytes()
 
     with pytest.raises(ValueError, match="must not overwrite"):
-        build_package(repo, readme, "none", require_clean=False)
+        build_package(REPO, readme, "none", require_clean=False)
 
     assert readme.read_bytes() == original
 

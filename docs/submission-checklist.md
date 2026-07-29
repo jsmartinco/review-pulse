@@ -136,6 +136,7 @@ Record every included artifact:
 | DistilBERT | [ ] | | | |
 
 - [ ] Included artifacts load offline, or each external retrieval is explicit and checksum-verified
+- [ ] Artifact-bearing modes include the four legacy v2 files required by the preserved ISY503 page
 - [ ] The lightweight CPU strategy includes at least the verified small-model path
 - [ ] DistilBERT packaging decision is consistent with the confirmed LMS limit
 - [ ] No package claims offline support if a Hugging Face download is still required

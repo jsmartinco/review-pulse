@@ -13,6 +13,12 @@ from pathlib import Path, PurePosixPath
 
 
 PACKAGE_ROOT = PurePosixPath("ReviewPulse-v3.0.0")
+LEGACY_ARTIFACTS = (
+    "outputs/baseline.joblib",
+    "outputs/bilstm.pt",
+    "outputs/distilbert.pt",
+    "outputs/vocab.json",
+)
 LIGHTWEIGHT_ARTIFACTS = (
     "outputs/absa/tfidf_baseline.joblib",
     "outputs/absa/tfidf_baseline_metrics.json",
@@ -157,7 +163,8 @@ def artifact_entries(repo: Path, mode: str) -> list[PackageEntry]:
     """Collect the requested verified artifacts and reject unresolved LFS files."""
     if mode == "none":
         return []
-    paths = list(LIGHTWEIGHT_ARTIFACTS)
+    paths = list(LEGACY_ARTIFACTS)
+    paths.extend(LIGHTWEIGHT_ARTIFACTS)
     if mode == "all":
         paths.extend(DISTILBERT_ARTIFACTS)
     entries: list[PackageEntry] = []
