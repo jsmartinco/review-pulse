@@ -42,6 +42,35 @@ PROHIBITED_PARTS = (
     ".pytest_cache",
     ".ipynb_checkpoints",
 )
+ALLOWED_SOURCE_FILES = frozenset(
+    {
+        ".gitattributes",
+        ".gitignore",
+        "README.md",
+        "app.py",
+        "conftest.py",
+        "constraints-a3.txt",
+        "data/semeval2014/.gitkeep",
+        "docs/architecture.md",
+        "docs/releaseNotes/v3.0.0.md",
+        "docs/submission-checklist.md",
+        "favicon.ico",
+        "favicon.svg",
+        "logo.png",
+        "pytest.ini",
+        "requirements.txt",
+    }
+)
+ALLOWED_SOURCE_PREFIXES = (
+    ".streamlit/",
+    "docs/dle602-a3/",
+    "pages/",
+    "scripts/",
+    "src/",
+    "static/",
+    "tests/",
+)
+LFS_POINTER_PREFIX = b"version https://git-lfs.github.com/spec/v1\n"
 
 
 @dataclass(frozen=True)
@@ -51,6 +80,7 @@ class PackageEntry:
 
 
 def _git(repo: Path, *args: str) -> str:
+    """Run a fixed Git executable with caller-supplied argument tokens."""
     result = subprocess.run(
         ("git", *args),
         cwd=repo,
@@ -62,6 +92,7 @@ def _git(repo: Path, *args: str) -> str:
 
 
 def _sha256(path: Path) -> str:
+    """Return the SHA-256 digest for a local file."""
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
@@ -70,6 +101,7 @@ def _sha256(path: Path) -> str:
 
 
 def _is_safe(relative_path: PurePosixPath) -> bool:
+    """Reject traversal, caches, credentials and restricted data paths."""
     if relative_path.is_absolute() or ".." in relative_path.parts:
         return False
     if any(part in PROHIBITED_PARTS for part in relative_path.parts):
@@ -83,7 +115,20 @@ def _is_safe(relative_path: PurePosixPath) -> bool:
     return True
 
 
+def _is_allowed_source(relative_path: PurePosixPath) -> bool:
+    """Return whether a tracked path is part of the explicit source allowlist."""
+    value = str(relative_path)
+    return value in ALLOWED_SOURCE_FILES or value.startswith(ALLOWED_SOURCE_PREFIXES)
+
+
+def _is_lfs_pointer(path: Path) -> bool:
+    """Detect an unresolved Git LFS pointer instead of a materialised artifact."""
+    with path.open("rb") as handle:
+        return handle.read(len(LFS_POINTER_PREFIX)) == LFS_POINTER_PREFIX
+
+
 def tracked_source_entries(repo: Path) -> list[PackageEntry]:
+    """Collect only explicitly approved Git-tracked source and documentation."""
     entries: list[PackageEntry] = []
     result = subprocess.run(
         ("git", "ls-files", "-z"),
@@ -98,7 +143,7 @@ def tracked_source_entries(repo: Path) -> list[PackageEntry]:
         relative = PurePosixPath(value)
         if relative.parts[0] == "outputs" and relative.name != ".gitkeep":
             continue
-        if not _is_safe(relative):
+        if not _is_safe(relative) or not _is_allowed_source(relative):
             continue
         source = repo / Path(relative)
         if source.is_symlink():
@@ -109,6 +154,7 @@ def tracked_source_entries(repo: Path) -> list[PackageEntry]:
 
 
 def artifact_entries(repo: Path, mode: str) -> list[PackageEntry]:
+    """Collect the requested verified artifacts and reject unresolved LFS files."""
     if mode == "none":
         return []
     paths = list(LIGHTWEIGHT_ARTIFACTS)
@@ -123,6 +169,8 @@ def artifact_entries(repo: Path, mode: str) -> list[PackageEntry]:
             continue
         if source.is_symlink():
             raise ValueError(f"Symlinks are not allowed in the package: {value}")
+        if _is_lfs_pointer(source):
+            raise RuntimeError(f"Artifact is an unresolved Git LFS pointer; run git lfs pull: {value}")
         entries.append(PackageEntry(source, PACKAGE_ROOT / PurePosixPath(value)))
     if missing:
         raise FileNotFoundError("Missing required artifacts:\n- " + "\n- ".join(missing))
@@ -130,6 +178,7 @@ def artifact_entries(repo: Path, mode: str) -> list[PackageEntry]:
 
 
 def report_entry(report: Path | None) -> list[PackageEntry]:
+    """Return the optional final report entry after validating its type."""
     if report is None:
         return []
     resolved = report.expanduser().resolve()
@@ -141,6 +190,7 @@ def report_entry(report: Path | None) -> list[PackageEntry]:
 
 
 def validate_entries(entries: list[PackageEntry]) -> None:
+    """Reject prohibited or duplicate archive destinations."""
     archive_paths: set[PurePosixPath] = set()
     for entry in entries:
         relative = entry.archive_path.relative_to(PACKAGE_ROOT)
@@ -159,6 +209,7 @@ def build_package(
     *,
     require_clean: bool = True,
 ) -> dict[str, object]:
+    """Build a reproducible ZIP and return its manifest and archive digest."""
     repo = repo.resolve()
     dirty = _git(repo, "status", "--porcelain", "--untracked-files=all")
     if require_clean and dirty:
@@ -168,11 +219,14 @@ def build_package(
     timestamp = datetime.fromtimestamp(commit_epoch, timezone.utc)
     zip_time = max(timestamp, datetime(1980, 1, 1, tzinfo=timezone.utc)).timetuple()[:6]
 
+    output = output.expanduser().resolve()
     entries = tracked_source_entries(repo)
     entries.extend(artifact_entries(repo, artifact_mode))
     entries.extend(report_entry(report))
     entries.sort(key=lambda item: str(item.archive_path))
     validate_entries(entries)
+    if any(output == entry.source.resolve() for entry in entries):
+        raise ValueError("Output path must not overwrite a packaged source file")
 
     manifest_entries = [
         {
@@ -191,7 +245,6 @@ def build_package(
     }
     manifest_bytes = (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode()
 
-    output = output.expanduser().resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(
         output,
@@ -218,6 +271,7 @@ def build_package(
 
 
 def main() -> None:
+    """Parse command-line options and build the selected package."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument(

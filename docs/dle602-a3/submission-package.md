@@ -1,6 +1,6 @@
 # DLE602 A3 Submission Package
 
-The package builder uses Git-tracked source as its allowlist, excludes tracked legacy model binaries, rejects restricted/raw-data paths and optionally adds verified v3 artifacts and the final report. Every entry is recorded with its byte size and SHA-256 digest in `PACKAGE_MANIFEST.json`.
+The package builder uses an explicit set of approved Git-tracked files and directories, excludes tracked legacy model binaries, rejects restricted/raw-data paths and optionally adds verified v3 artifacts and the final report. Every entry is recorded with its byte size and SHA-256 digest in `PACKAGE_MANIFEST.json`.
 
 ## Build modes
 
@@ -34,7 +34,7 @@ The default output is `dist/ReviewPulse-v3.0.0-DLE602-A3.zip`. The builder refus
 
 Use `lightweight` when the submission limit cannot accommodate the approximately 256 MB DistilBERT directory. Use `all` only after confirming the LMS limit. If DistilBERT is omitted, document that its app path produces the controlled missing-artifact state unless a separately checksum-verified artifact is installed.
 
-No mode includes SemEval XML, `.review` files, credentials, virtual environments, caches or generated row-level prediction exports. SemEval acquisition remains documented in `semeval-restaurants.md`.
+No mode includes SemEval XML, `.review` files, virtual environments, caches or generated row-level prediction exports. Structural filtering cannot detect a credential or token embedded inside an otherwise approved source file, so the secret scan in `docs/submission-checklist.md` is mandatory before sign-off. SemEval acquisition remains documented in `semeval-restaurants.md`.
 
 ## Verification
 

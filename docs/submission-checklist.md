@@ -4,7 +4,7 @@ Use this checklist against one frozen source commit. Do not create the final tag
 
 ## Release identity
 
-- [ ] Source commit recorded: `________________`
+- [ ] Exact post-merge #89 source commit recorded: `________________`
 - [ ] Academic report commit recorded: `________________`
 - [ ] Submission ZIP SHA-256 recorded: `________________`
 - [ ] ZIP size recorded: `________________`
@@ -12,7 +12,7 @@ Use this checklist against one frozen source commit. Do not create the final tag
 - [ ] `v3.0.0` tag points to the verified source commit
 - [ ] GitHub release notes and submitted package describe the same contents
 
-The implementation baseline before packaging is merge commit `0f02be3` (PR #100). The final release commit will differ if #89 documentation or packaging changes are merged.
+The implementation baseline before #89 is merge commit `0f02be3` (PR #100). The final archive must be built only after #89 is merged and must identify that exact post-merge commit.
 
 ## Report and group record
 
@@ -170,9 +170,9 @@ Record every included artifact:
 Final sequence:
 
 1. Freeze the accepted report and source commits.
-2. Build and inspect the deterministic ZIP.
-3. Extract and retest the ZIP.
-4. Record sizes and SHA-256 digests.
-5. Obtain group sign-off.
-6. Merge #89.
+2. Merge #89.
+3. Build and inspect the deterministic ZIP from the exact post-merge commit.
+4. Extract and retest the ZIP.
+5. Record sizes and SHA-256 digests.
+6. Obtain group sign-off.
 7. Create and publish `v3.0.0` from the verified release commit.
