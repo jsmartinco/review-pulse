@@ -314,6 +314,7 @@ Current status:
 - `docs/releaseNotes/v2.3.0.md` - compatibility wrapper removal release
 - `docs/releaseNotes/v3.0.0.md` - consolidated v3 delivery status and release gates
 - `docs/dle602-a3/` - v3 environment, SemEval provenance and smoke instructions
+- `docs/dle602-a3/submission-package.md` - deterministic A3 ZIP modes and verification
 
 ## Issue Creator (batch issue helper)
 

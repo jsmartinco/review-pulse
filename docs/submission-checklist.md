@@ -142,6 +142,7 @@ Record every included artifact:
 
 ## Package inspection
 
+- [ ] Archive is built with `scripts/build_a3_package.py` using the selected artifact mode
 - [ ] Archive is built from a documented allowlist, not the entire working directory
 - [ ] Archive expands into one clearly named root folder
 - [ ] README quick-start is visible at the package root
