@@ -297,7 +297,7 @@ pytest tests/
 
 Current status:
 
-- Full suite on the merged #100 six-model baseline: 266 passed, 8 skipped.
+- Full suite on the #89 package candidate: 269 passed, 8 skipped.
 - Skips apply only when the optional, gitignored legacy Amazon dataset is absent.
 
 ## Documentation Map
