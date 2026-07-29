@@ -144,6 +144,10 @@ DistilBERT note: `outputs/distilbert.pt` is a compact checkpoint. It stores the 
 
 See `docs/architecture.md` for the full artifact policy and DistilBERT model-card notes.
 
+### DLE602 v3 artifacts
+
+The six verified v3 inference artifacts are versioned through Git LFS so a GitHub/Streamlit Cloud checkout receives the same checkpoints used by the application. After a manual clone, run `git lfs pull` if LFS objects were not fetched automatically. Generated evaluations, predictions and restricted SemEval data remain excluded.
+
 ## GloVe Embeddings
 
 GloVe pre-trained vectors are optional for BiLSTM training.
@@ -206,9 +210,9 @@ The landing page links to two deliberately separate workflows:
 - **ReviewPulse v2.3.0 (ISY503):** binary sentiment for one complete Amazon review.
 - **ReviewPulse v3.0.0 (DLE602):** three-class sentiment for one or more manually supplied restaurant aspects.
 
-The v3 page includes mixed-polarity samples, supports the four-model comparison ladder and shows aligned ATAE-LSTM attention or DistilBERT gradient × input attribution only as indicative evidence, not model reasoning. TF-IDF and the target-agnostic LSTM explicitly report token evidence as unsupported. SemEval Restaurants data and v3 artifacts are local inputs; a missing model is reported as a controlled application error rather than falling back to a v2 model.
+The v3 page includes mixed-polarity samples, supports the four-model comparison ladder and shows aligned ATAE-LSTM attention or DistilBERT gradient × input attribution only as indicative evidence, not model reasoning. TF-IDF and the target-agnostic LSTM explicitly report token evidence as unsupported. Verified inference artifacts are supplied through Git LFS; SemEval Restaurants data remains a local training/evaluation input. A missing model is reported as a controlled application error rather than falling back to a v2 model.
 
-After preparing the local v3 artifacts, verify the ABSA path with:
+After fetching the v3 LFS artifacts, verify the ABSA path with:
 
 ```bash
 .venv/bin/python -m pytest tests/absa -q

@@ -1,0 +1,40 @@
+{
+  "config": {
+    "model": "distilbert",
+    "pretrained_model": "distilbert-base-uncased",
+    "seed": 42,
+    "device": "mps",
+    "epochs_requested": 2,
+    "epochs_completed": 2,
+    "batch_size": 8,
+    "learning_rate": 2e-05,
+    "optimizer": "AdamW",
+    "weight_decay": 0.01,
+    "patience": 2,
+    "max_length": 128
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.6967343657174044,
+      "development_macro_f1": 0.6086916494485273
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.44294609216352304,
+      "development_macro_f1": 0.6727033132530119
+    }
+  ],
+  "best_epoch": 2,
+  "selection_metric": "development_macro_f1",
+  "best_development_macro_f1": 0.6727033132530119,
+  "stopped_early": false,
+  "training_seconds": 122.08123479200003,
+  "overfitting_diagnostic": {
+    "material_overfitting_observed": false,
+    "development_macro_f1_drop_after_best": 0.0,
+    "threshold": 0.02,
+    "multi_seed_recommended": false,
+    "decision": "Retain the fixed seed unless later runs show instability."
+  }
+}
