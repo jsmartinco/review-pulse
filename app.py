@@ -24,11 +24,15 @@ def render_introduction() -> None:
     st.subheader("Choose a workspace")
     left, right = st.columns(2)
     with left:
-        st.markdown("### ReviewPulse v2.3.0")
-        st.write("The current ISY503 product: one binary sentiment label for an entire Amazon review.")
+        with st.container(border=True):
+            st.caption("ISY503 · REVIEW-LEVEL SENTIMENT")
+            st.markdown("### ReviewPulse v2.3.0")
+            st.write("One binary sentiment label for an entire Amazon review.")
     with right:
-        st.markdown("### ReviewPulse v3.0.0")
-        st.write("The DLE602 implementation: one positive, neutral or negative label per supplied aspect.")
+        with st.container(border=True):
+            st.caption("DLE602 · ASPECT-LEVEL SENTIMENT")
+            st.markdown("### ReviewPulse v3.0.0")
+            st.write("One positive, neutral or negative label per supplied aspect.")
 
     st.info("v3 uses SemEval Restaurants and is a new ABSA learning task; it is not a relabelled v2 model.")
 
