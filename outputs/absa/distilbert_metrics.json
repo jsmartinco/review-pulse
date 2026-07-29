@@ -1,0 +1,140 @@
+{
+  "development": {
+    "accuracy": 0.7441540577716643,
+    "macro_f1": 0.6727033132530119,
+    "per_class": {
+      "negative": {
+        "precision": 0.7621621621621621,
+        "recall": 0.7085427135678392,
+        "f1-score": 0.734375,
+        "support": 199.0
+      },
+      "neutral": {
+        "precision": 0.5242718446601942,
+        "recall": 0.39416058394160586,
+        "f1-score": 0.45,
+        "support": 137.0
+      },
+      "positive": {
+        "precision": 0.7881548974943052,
+        "recall": 0.8849104859335039,
+        "f1-score": 0.8337349397590361,
+        "support": 391.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        141,
+        23,
+        35
+      ],
+      [
+        25,
+        54,
+        58
+      ],
+      [
+        19,
+        26,
+        346
+      ]
+    ],
+    "label_order": [
+      "negative",
+      "neutral",
+      "positive"
+    ]
+  },
+  "test": {
+    "accuracy": 0.825,
+    "macro_f1": 0.7198887144219849,
+    "per_class": {
+      "negative": {
+        "precision": 0.7823834196891192,
+        "recall": 0.7704081632653061,
+        "f1-score": 0.7763496143958869,
+        "support": 196.0
+      },
+      "neutral": {
+        "precision": 0.7752808988764045,
+        "recall": 0.3520408163265306,
+        "f1-score": 0.4842105263157895,
+        "support": 196.0
+      },
+      "positive": {
+        "precision": 0.8400954653937948,
+        "recall": 0.967032967032967,
+        "f1-score": 0.8991060025542784,
+        "support": 728.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        151,
+        9,
+        36
+      ],
+      [
+        29,
+        69,
+        98
+      ],
+      [
+        13,
+        11,
+        704
+      ]
+    ],
+    "label_order": [
+      "negative",
+      "neutral",
+      "positive"
+    ]
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.6967343657174044,
+      "development_macro_f1": 0.6086916494485273
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.44294609216352304,
+      "development_macro_f1": 0.6727033132530119
+    }
+  ],
+  "config": {
+    "model": "distilbert",
+    "pretrained_model": "distilbert-base-uncased",
+    "seed": 42,
+    "device": "mps",
+    "epochs_requested": 2,
+    "epochs_completed": 2,
+    "batch_size": 8,
+    "learning_rate": 2e-05,
+    "optimizer": "AdamW",
+    "weight_decay": 0.01,
+    "patience": 2,
+    "max_length": 128
+  },
+  "best_epoch": 2,
+  "selection_metric": "development_macro_f1",
+  "best_development_macro_f1": 0.6727033132530119,
+  "stopped_early": false,
+  "training_seconds": 122.08123479200003,
+  "overfitting_diagnostic": {
+    "material_overfitting_observed": false,
+    "development_macro_f1_drop_after_best": 0.0,
+    "threshold": 0.02,
+    "multi_seed_recommended": false,
+    "decision": "Retain the fixed seed unless later runs show instability."
+  },
+  "provenance": {
+    "git_commit": "cef08fa90e8e66b6bd016268ba4f5e2af379ae80",
+    "generated_at_utc": "2026-07-28T20:21:05.936853+00:00",
+    "train_file": "/Users/luisfaria/Desktop/sEngineer/review-pulse/data/semeval2014/restaurants/restaurants_train.xml",
+    "train_sha256": "223601da1bded6caa4ef9cf91a7007578141ca6d8ed50d5a5c217565f89d2fc5",
+    "test_file": "/Users/luisfaria/Desktop/sEngineer/review-pulse/data/semeval2014/restaurants/restaurants_test.xml",
+    "test_sha256": "f21509cfa37e16534cd5b2da043be487355b64ef48fe8d6aaacaeca6b49cc0fb"
+  }
+}

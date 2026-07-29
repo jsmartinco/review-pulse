@@ -1,6 +1,6 @@
 # ReviewPulse v3 smoke checks
 
-The SemEval Restaurants XML files and v3 artifacts are intentionally local: the dataset licence/provenance and the artifact policy are recorded separately. After preparing those inputs, run from the repository root:
+The SemEval Restaurants XML files remain local because their licence/provenance is handled separately. Verified v3 inference artifacts are versioned through Git LFS; run `git lfs pull` after a manual clone when they are not fetched automatically. Then run from the repository root:
 
 ```bash
 .venv/bin/python -m pytest tests/absa -q

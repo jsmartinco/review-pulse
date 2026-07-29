@@ -1,0 +1,170 @@
+{
+  "development": {
+    "accuracy": 0.6217331499312242,
+    "macro_f1": 0.536976252235525,
+    "per_class": {
+      "negative": {
+        "precision": 0.5555555555555556,
+        "recall": 0.45226130653266333,
+        "f1-score": 0.4986149584487535,
+        "support": 199.0
+      },
+      "neutral": {
+        "precision": 0.4883720930232558,
+        "recall": 0.30656934306569344,
+        "f1-score": 0.37668161434977576,
+        "support": 137.0
+      },
+      "positive": {
+        "precision": 0.6680584551148225,
+        "recall": 0.8184143222506394,
+        "f1-score": 0.735632183908046,
+        "support": 391.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        90,
+        18,
+        91
+      ],
+      [
+        27,
+        42,
+        68
+      ],
+      [
+        45,
+        26,
+        320
+      ]
+    ],
+    "label_order": [
+      "negative",
+      "neutral",
+      "positive"
+    ]
+  },
+  "test": {
+    "accuracy": 0.64375,
+    "macro_f1": 0.47989485842168733,
+    "per_class": {
+      "negative": {
+        "precision": 0.3694581280788177,
+        "recall": 0.3826530612244898,
+        "f1-score": 0.37593984962406013,
+        "support": 196.0
+      },
+      "neutral": {
+        "precision": 0.49382716049382713,
+        "recall": 0.20408163265306123,
+        "f1-score": 0.2888086642599278,
+        "support": 196.0
+      },
+      "positive": {
+        "precision": 0.7248803827751196,
+        "recall": 0.8324175824175825,
+        "f1-score": 0.7749360613810742,
+        "support": 728.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        75,
+        7,
+        114
+      ],
+      [
+        40,
+        40,
+        116
+      ],
+      [
+        88,
+        34,
+        606
+      ]
+    ],
+    "label_order": [
+      "negative",
+      "neutral",
+      "positive"
+    ]
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.9637103411886427,
+      "development_macro_f1": 0.335046904266495
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.8695384118292067,
+      "development_macro_f1": 0.3591267326528628
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.8150039341714647,
+      "development_macro_f1": 0.4623992466302655
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.7606571051809523,
+      "development_macro_f1": 0.502322110450865
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.7173090563880072,
+      "development_macro_f1": 0.486298692579681
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.6578213744693332,
+      "development_macro_f1": 0.536976252235525
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.6063210500611199,
+      "development_macro_f1": 0.5324678485292297
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.556030402580897,
+      "development_macro_f1": 0.5297171744604823
+    }
+  ],
+  "config": {
+    "model": "atae_lstm",
+    "seed": 42,
+    "device": "cpu",
+    "epochs_requested": 8,
+    "epochs_completed": 8,
+    "batch_size": 64,
+    "learning_rate": 0.001,
+    "optimizer": "Adam",
+    "weight_decay": 0.0001,
+    "patience": 2,
+    "max_length": 80,
+    "aspect_max_length": 12
+  },
+  "best_epoch": 6,
+  "selection_metric": "development_macro_f1",
+  "best_development_macro_f1": 0.536976252235525,
+  "stopped_early": false,
+  "training_seconds": 10.839145790989278,
+  "overfitting_diagnostic": {
+    "material_overfitting_observed": false,
+    "development_macro_f1_drop_after_best": 0.007259077775042755,
+    "threshold": 0.02,
+    "multi_seed_recommended": false,
+    "decision": "Retain the fixed seed unless later runs show instability."
+  },
+  "provenance": {
+    "git_commit": "cef08fa90e8e66b6bd016268ba4f5e2af379ae80",
+    "generated_at_utc": "2026-07-28T20:21:05.936853+00:00",
+    "train_file": "/Users/luisfaria/Desktop/sEngineer/review-pulse/data/semeval2014/restaurants/restaurants_train.xml",
+    "train_sha256": "223601da1bded6caa4ef9cf91a7007578141ca6d8ed50d5a5c217565f89d2fc5",
+    "test_file": "/Users/luisfaria/Desktop/sEngineer/review-pulse/data/semeval2014/restaurants/restaurants_test.xml",
+    "test_sha256": "f21509cfa37e16534cd5b2da043be487355b64ef48fe8d6aaacaeca6b49cc0fb"
+  }
+}

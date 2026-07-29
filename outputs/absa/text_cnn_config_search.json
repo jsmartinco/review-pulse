@@ -1,0 +1,66 @@
+{
+  "selection_metric": "development_macro_f1",
+  "official_test_evaluated": false,
+  "seed": 42,
+  "epochs": 4,
+  "batch_size": 64,
+  "patience": 2,
+  "candidate_limit": 3,
+  "generated_at_utc": "2026-07-28T20:20:56.887627+00:00",
+  "provenance": {
+    "git_commit": "cef08fa90e8e66b6bd016268ba4f5e2af379ae80",
+    "train_file": "/Users/luisfaria/Desktop/sEngineer/review-pulse/data/semeval2014/restaurants/restaurants_train.xml",
+    "train_sha256": "223601da1bded6caa4ef9cf91a7007578141ca6d8ed50d5a5c217565f89d2fc5",
+    "test_file": "/Users/luisfaria/Desktop/sEngineer/review-pulse/data/semeval2014/restaurants/restaurants_test.xml",
+    "test_sha256": "f21509cfa37e16534cd5b2da043be487355b64ef48fe8d6aaacaeca6b49cc0fb"
+  },
+  "candidates": [
+    {
+      "filter_widths": [
+        2,
+        3,
+        4
+      ],
+      "num_filters": 64,
+      "best_epoch": 4,
+      "development_macro_f1": 0.4308795489656534,
+      "training_seconds": 7.678901416991721,
+      "parameter_count": 393371,
+      "official_test_evaluated": false
+    },
+    {
+      "filter_widths": [
+        3,
+        4,
+        5
+      ],
+      "num_filters": 64,
+      "best_epoch": 4,
+      "development_macro_f1": 0.3776478799441154,
+      "training_seconds": 8.916777874997933,
+      "parameter_count": 412571,
+      "official_test_evaluated": false
+    },
+    {
+      "filter_widths": [
+        3,
+        4,
+        5
+      ],
+      "num_filters": 100,
+      "best_epoch": 4,
+      "development_macro_f1": 0.47215145081387117,
+      "training_seconds": 12.136911916997633,
+      "parameter_count": 456203,
+      "official_test_evaluated": false
+    }
+  ],
+  "selected": {
+    "filter_widths": [
+      3,
+      4,
+      5
+    ],
+    "num_filters": 100
+  }
+}
