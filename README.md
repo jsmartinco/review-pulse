@@ -1,18 +1,32 @@
 # ReviewPulse
 
-Multi-domain Amazon product review sentiment classifier built for ISY503 Intelligent Systems, Assessment 3.
+ReviewPulse is a phased sentiment-analysis project:
 
-The project compares three NLP approaches behind one Streamlit app:
+- **v1.0 / v2.x — ISY503:** binary sentiment for an entire Amazon product review.
+- **v3.0 — DLE602:** three-class aspect-based sentiment analysis (ABSA) for one or more manually supplied restaurant aspects.
 
-- **Baseline:** TF-IDF + Logistic Regression
-- **Neural:** BiLSTM + GloVe
-- **Transformer:** Hugging Face DistilBERT
+The current DLE602 release compares six models on SemEval-2014 Restaurants. TF-IDF, LSTM, GRU and TextCNN receive only the review; ATAE-LSTM and DistilBERT receive the `(review, aspect)` pair. GRU and TextCNN are exploratory controls, while the submitted four-model experiment remains canonical.
 
-Dataset: 8,000 labelled product reviews across Books, DVDs, Electronics, and Kitchen & Housewares.
+The Streamlit application preserves both academic phases as separate workflows. Token evidence is available only for ATAE-LSTM attention and DistilBERT gradient × input attribution, and is presented as indicative rather than causal.
 
 [Main study repo](https://github.com/lfariabr/masters-swe-ai)
 
-## Current Results
+## DLE602 v3 Results
+
+The official Restaurants test contains 1,120 retained three-class aspect instances. The mixed-polarity subset contains 228 instances across 80 sentences.
+
+| Model | Scope | Test accuracy | Test macro-F1 | Mixed accuracy | Mixed macro-F1 |
+|---|---|---:|---:|---:|---:|
+| TF-IDF | Core | 0.7018 | 0.4605 | 0.4430 | 0.3319 |
+| LSTM | Core | 0.6687 | 0.4326 | 0.4167 | 0.3264 |
+| GRU | Exploratory | 0.6750 | 0.4603 | 0.4079 | 0.3156 |
+| TextCNN | Exploratory | 0.6893 | 0.4498 | 0.4167 | 0.3106 |
+| ATAE-LSTM | Core | 0.6438 | 0.4799 | 0.4737 | 0.4491 |
+| DistilBERT | Core | **0.8250** | **0.7199** | **0.6667** | **0.6473** |
+
+The frozen six-model provenance, efficiency measurements and limitations are documented in [`docs/dle602-a3/six-model-results.md`](docs/dle602-a3/six-model-results.md).
+
+## ISY503 v2 Results
 
 Held-out test split: 1,159 reviews, stratified 70/15/15 split, seed=42.
 
@@ -89,14 +103,14 @@ review-pulse/
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt -c constraints-a3.txt
 ```
 
 Windows:
 
 ```powershell
 .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements.txt -c constraints-a3.txt
 ```
 
 Place `.review` data files under `data/`:
@@ -283,7 +297,7 @@ pytest tests/
 
 Current status:
 
-- Full suite on the #94 candidate branch: 250 passed, 8 skipped.
+- Full suite on the merged #100 six-model baseline: 266 passed, 8 skipped.
 - Skips apply only when the optional, gitignored legacy Amazon dataset is absent.
 
 ## Documentation Map

@@ -1,213 +1,177 @@
-# Submission Checklist
+# DLE602 A3 Submission Checklist — ReviewPulse v3.0.0
 
-Final checklist for group code submission. Use this document to verify all required components are present, tested, and documented before submission.
+Use this checklist against one frozen source commit. Do not create the final tag or upload the ZIP until every required item is evidenced.
 
----
+## Release identity
 
-## Repository & Code
+- [ ] Source commit recorded: `________________`
+- [ ] Academic report commit recorded: `________________`
+- [ ] Submission ZIP SHA-256 recorded: `________________`
+- [ ] ZIP size recorded: `________________`
+- [ ] LMS upload limit confirmed: `________________`
+- [ ] `v3.0.0` tag points to the verified source commit
+- [ ] GitHub release notes and submitted package describe the same contents
 
-- [ ] **GitHub Repository Link**
-  - URL: `https://github.com/lfariabr/review-pulse`
-  - Status: Public, all commits visible
-  - Git history: Clean with conventional commit messages
+The implementation baseline before packaging is merge commit `0f02be3` (PR #100). The final release commit will differ if #89 documentation or packaging changes are merged.
 
-- [ ] **Main Branch Protected & Updated**
-  - All PRs merged into main
-  - All tests passing on main branch
-  - Latest commit: verified with `git log --oneline -1`
+## Report and group record
 
----
+- [ ] Final report is 1,350–1,650 words under its declared counting rule
+- [ ] Canonical four-model results remain separate from exploratory GRU/TextCNN results
+- [ ] Tables, figures and token-evidence examples trace to frozen outputs
+- [ ] Attention and attribution are described as indicative, not causal
+- [ ] Group ID appears on the cover/footer
+- [ ] Contribution record and dated hand-offs are confirmed by all members
+- [ ] Academic Integrity Declaration and Statement of Acknowledgement are complete
+- [ ] Final PDF is copied into the package
 
-## Deployment & Access
+Group members:
 
-- [ ] **Streamlit App Deployed**
-  - Deployed URL: to be confirmed by Luis
-  - Status: Running locally; production deployment to be confirmed by Luis
-  - Instructions: See README.md → "Quick Start"
-  - Command: `streamlit run app.py` (from repository root)
+- Luis Faria — A00187785
+- Victor Dorantes — A00179705
+- Juan Martinez — A00167145
 
-- [ ] **README Setup Instructions Verified**
-  - File: `README.md`
-  - Sections confirmed:
-    - [ ] Environment setup (Python, venv)
-    - [ ] Dependency installation (`pip install -r requirements.txt`)
-    - [ ] Data download / setup steps
-    - [ ] How to run tests
-    - [ ] How to run the app (Streamlit)
-    - [ ] How to run inference / predictions
-    - [ ] How to train models (if applicable)
+## Source and licensing
 
----
+- [ ] Package includes the required Python source, tests, README and DLE602 documentation
+- [ ] No `.env`, credentials, tokens, private keys, editor state, caches or temporary files
+- [ ] No `.git/`, `.venv/`, `__pycache__/`, `.pytest_cache/` or Hugging Face cache
+- [ ] No restricted SemEval XML or derived row-level dataset is redistributed
+- [ ] SemEval acquisition, placement and checksum instructions are included
+- [ ] Third-party dependencies and cited model/data sources are documented
+- [ ] Git status is clean before the package is built
 
-## Model Artifacts
+## Environment and installation
 
-- [ ] **Model Artifacts Archived**
-  - TF-IDF baseline: `outputs/baseline.joblib` (v2.1.0)
-  - BiLSTM checkpoint: `outputs/bilstm.pt` (v2.1.0)
-  - DistilBERT checkpoint: `outputs/distilbert.pt` (v2.1.0, integrated in app)
-  - Vocabulary: `outputs/vocab.json` (JSON format)
-  - All artifacts tested and verified to load
-  - Open item: checkpoint hosting remains tracked in Issue #28
+Run in a new environment using the reviewed A3 constraints:
 
-- [ ] **Model Reproducibility**
-  - Training scripts: `src/training/bilstm.py`, `src/training/bert.py`
-  - Inference scripts: `src/inference/` package (Closes #55)
-  - Evaluation scripts: `src/evaluation/` package (Closes #56)
-  - Seed fixed for reproducibility (tests verified)
-  - Results can be replicated from training
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt -c constraints-a3.txt
+```
 
----
+- [ ] Python and platform versions recorded
+- [ ] Installation succeeds without undocumented manual changes
+- [ ] Resolved critical dependency versions match `constraints-a3.txt`
+- [ ] CPU-only import and application startup succeed
 
-## Issues & Pull Requests
+## Automated verification
 
-- [ ] **GitHub Issues Tracked**
-  - Phase 3 modular refactor issues: #50–#59
-  - Core deliverables: #20–#30
-  - All issues link to relevant PRs
-  - Closed issues marked with PR/commit references
+```bash
+.venv/bin/python -m pytest -q
+.venv/bin/python scripts/smoke_absa.py
+.venv/bin/python scripts/export_absa_evidence.py
+```
 
-- [ ] **Pull Requests Documented**
-  - All PRs tagged with conventional commit scope (e.g., `feat(training)`, `fix(inference)`)
-  - All PRs link to issue(s) they close
-  - All PRs have meaningful descriptions
-  - All PRs passed CI tests before merge
+- [ ] Full suite passes; counts and expected skips are recorded
+- [ ] Legacy ISY503 regression path remains functional
+- [ ] All available v3 artifacts clean-load
+- [ ] `food` and `service` smoke predictions return one result per aspect
+- [ ] TF-IDF/LSTM/GRU/TextCNN evidence state is explicitly unsupported
+- [ ] ATAE-LSTM attention aligns to visible review offsets
+- [ ] DistilBERT attribution aligns to visible review offsets
 
----
+## Data audit and evaluation evidence
 
-## Releases & Tags
+With legitimately acquired Restaurants XML files:
 
-- [ ] **GitHub Release / Tag Created**
-  - Latest: `v2.1.0` (current stable, includes DistilBERT)
-  - Future release: `v2.2.0` post-refactor release
-  - Release notes: Include key features, model performance, known limitations
-  - Link: `https://github.com/lfariabr/review-pulse/releases`
+```bash
+.venv/bin/python -m src.absa.data.audit
+.venv/bin/python -m src.absa.evaluation.runner --device cpu
+```
 
----
+- [ ] Audit reproduces the documented label and offset counts
+- [ ] Grouped split overlap assertions pass
+- [ ] Official retained test count is 1,120
+- [ ] Mixed-polarity subset is 228 instances across 80 sentences
+- [ ] Canonical evaluation output and prediction digest are preserved
+- [ ] CPU evaluation completes or any documented hardware limitation is reproduced honestly
 
-## Presentation & Evidence
+The supplemental six-model command is:
 
-- [ ] **Presentation / Demo Video**
-  - **Template:** See [docs/assessment-files/presentation-outline.md](assessment-files/presentation-outline.md) (slide-by-slide speaker notes)
-  - **Demo test cases:** See [docs/assessment-files/demo-test-cases.md](assessment-files/demo-test-cases.md) (10 acceptance test cases with model outputs)
-  - Owner: to be confirmed by Luis
-  - Link: to be confirmed by Luis
-  - Duration: ~13–14 minutes total (Luis ~6.25 min, Victor ~3.5 min, Samiran ~3.75 min)
-  - Covers:
-    - [ ] Problem framing: sentiment analysis in e-commerce (Slide 2)
-    - [ ] Dataset: 8,000 Amazon reviews, 4 domains, 50/50 balance (Slide 3)
-    - [ ] Baseline & BiLSTM: architecture & training (Slides 4–7)
-    - [ ] DistilBERT: fine-tuning & performance gains (Slide 8)
-    - [ ] Error analysis: 10 acceptance test cases, failure modes (Slide 9)
-    - [ ] Live demo: Streamlit app, edge cases, confidence values (Slide 9 demo)
-    - [ ] Ethics: label noise, domain bias, calibration risk (Slide 10)
-    - [ ] Future work: RoBERTa, Platt scaling, LIME explainability (Slide 11)
-  - Submitted to: to be confirmed by Luis
+```bash
+.venv/bin/python -m src.absa.evaluation.runner \
+  --models tfidf target_lstm target_gru text_cnn atae_lstm distilbert \
+  --device cpu
+```
 
-- [ ] **Individual Report**
-  - **Template:** See [docs/assessment-files/individual-report-template.md](assessment-files/individual-report-template.md) (detailed template with examples)
-  - **Target length:** 250 words ±10% (225–275 words per report)
-  - **Slide assignments:**
-    - [ ] Luis Faria (A00187785): Slides 1, 4, 5, 6, 7, 12 (Title · Preprocessing · Architecture · Training · Results · Summary)
-    - [ ] Victor Meneses (A00179705): Slides 3, 8, 10 (Dataset · Transformers · Ethics & Limitations)
-    - [ ] Samiran Shrestha (A00106473): Slides 2, 9, 11 (Problem Statement · Live Demo · Future Work)
-  - **Requirements:**
-    - [ ] Student name & ID confirmed
-    - [ ] Contribution % agreed by team (must total 100%)
-    - [ ] Distinct ethical angle per report
-    - [ ] APA references included
-    - [ ] Speaker notes align with presentation outline
-  - Submitted to: to be confirmed by Luis
+- [ ] Supplemental output remains separate from `outputs/absa/evaluation/`
+- [ ] GRU and TextCNN remain labelled exploratory
 
----
+## Streamlit acceptance
 
-## Academic Integrity
+```bash
+.venv/bin/streamlit run app.py
+```
 
-- [ ] **Group Member Details**
-  - [ ] Luis Faria — Student ID: A00187785 — 60% (primary technical implementation, app, tests, docs, PR hardening)
-  - [ ] Victor Meneses — Student ID: A00179705 — 25% (DistilBERT implementation, dataset analysis, error analysis, ethics)
-  - [ ] Samiran Shrestha — Student ID: A00106473 — 15% (problem framing, live demo, future work)
-  - **Total:** 100% ✓ (per `docs/assessment-files/individual-report-template.md`)
+- [ ] Landing page clearly separates ISY503 v2.3.0 and DLE602 v3.0.0
+- [ ] Intro page does not duplicate the sidebar logo
+- [ ] Sidebar logo, menu order and favicon render correctly
+- [ ] Sample generator fills a mixed-polarity review and aspects
+- [ ] Manual comma-separated aspects preserve input order
+- [ ] Each of the six v3 models can be selected when its artifact exists
+- [ ] Supported token evidence renders safely with its limitation
+- [ ] Missing artifacts and invalid input show controlled errors without silent fallback
+- [ ] No stack trace or debug output appears in the user workflow
 
-- [ ] **Academic Integrity Declaration**
-  - [ ] All group members have reviewed the submission
-  - [ ] Code authored by group members (or properly attributed to open-source libraries)
-  - [ ] No code submitted for other assessments in parallel
-  - [ ] Torrens University academic integrity policy understood and acknowledged
-  - [ ] Final academic integrity confirmation completed by Luis and team
-  - [ ] Declaration statement signed by all members if required by institution
+Capture at least:
 
-- [ ] **Citation & Attribution**
-  - All external libraries listed in `requirements.txt`
-  - Data sources documented in code comments
-  - Academic papers / references cited in docstrings or README
-  - No plagiarism: code is original or properly licensed
+- [ ] v3 input/result view
+- [ ] ATAE-LSTM heatmap
+- [ ] DistilBERT attribution view
+- [ ] one controlled missing-artifact or validation message
 
----
+## Artifact strategy
 
-## Backup & Final Steps
+Record every included artifact:
 
-- [ ] **Backup Copy Retained**
-  - Local backup: to be confirmed by Luis
-  - Cloud backup: to be confirmed by Luis
-  - Retention period: Until final grade confirmed (minimum 1 month post-submission)
-  - Proof: Screenshot or confirmation email
+| Artifact | Included? | Bytes | SHA-256 | Runtime/network dependency |
+|---|:---:|---:|---|---|
+| TF-IDF | [ ] | | | |
+| Target LSTM | [ ] | | | |
+| Target GRU | [ ] | | | |
+| TextCNN | [ ] | | | |
+| ATAE-LSTM | [ ] | | | |
+| DistilBERT | [ ] | | | |
 
-- [ ] **Final Tests Run**
-  - Fast suite command: `pytest tests/ -q -m "not slow"`
-  - Full suite command: `pytest tests/ -q`
-  - Latest verified test output: rerun immediately before submission or cite the final CI run; avoid stale exact counts
-  - Linting status: to be confirmed by Luis if used
-  - No warnings or errors on startup
+- [ ] Included artifacts load offline, or each external retrieval is explicit and checksum-verified
+- [ ] The lightweight CPU strategy includes at least the verified small-model path
+- [ ] DistilBERT packaging decision is consistent with the confirmed LMS limit
+- [ ] No package claims offline support if a Hugging Face download is still required
 
-- [ ] **Code Review Checklist**
-  - [ ] No hardcoded credentials in repository
-  - [ ] No unnecessary large files (`.gitignore` is clean)
-  - [ ] No debug print statements left in production code
-  - [ ] Type hints and docstrings present where relevant
-  - [ ] README is complete and accurate
+## Package inspection
 
----
+- [ ] Archive is built from a documented allowlist, not the entire working directory
+- [ ] Archive expands into one clearly named root folder
+- [ ] README quick-start is visible at the package root
+- [ ] No broken symlinks or absolute local paths
+- [ ] Largest files and total uncompressed/compressed sizes are reviewed
+- [ ] Secret scan returns no findings
+- [ ] Cache/temporary-file scan returns no findings
+- [ ] Restricted-data scan returns no findings
+- [ ] ZIP is extracted into a clean directory and the documented verification path is rerun
 
-## Submission Sign-Off
+## Final sign-off
 
-| Item | Status | Notes |
-|------|--------|-------|
-| Repository ready | ✓ | Public, accessible, clean history |
-| Tests passing | ✓ | Fast suite command documented; use latest CI/local output before final submission |
-| README complete | ✓ | Setup, usage, deployment documented |
-| Model artifacts | ✓ | BiLSTM, TF-IDF, DistilBERT (v2.1.0) — all trained & packaged |
-| Issues & PRs | ✓ | Phase 3 refactor tracked in #50–#59; merged PRs documented through #66 |
-| Release created | ✓ | v2.1.0 tagged; v2.2.0 planned as post-refactor release |
-| Presentation | 🕐 | Outline & test cases ready; video to be confirmed by Luis |
-| Individual reports | 🕐 | Template ready; final reports to be confirmed by Luis |
-| Academic integrity | ✓ | Group members & IDs confirmed |
-| Backup retained | 🕐 | Location to be confirmed by Luis |
+| Gate | Owner | Status | Evidence |
+|---|---|:---:|---|
+| Report and references | Group | [ ] | |
+| Contribution record | Group | [ ] | |
+| Clean installation | | [ ] | |
+| Tests and CPU smoke | | [ ] | |
+| Artifact checksums/sizes | | [ ] | |
+| Streamlit acceptance | | [ ] | |
+| Package content/security scan | | [ ] | |
+| ZIP extraction retest | | [ ] | |
+| Final tag and GitHub release | | [ ] | |
 
----
+Final sequence:
 
-## Notes & Known Limitations
-
-- **Model Performance:**
-  - BiLSTM: Single-layer architecture, trained on 8,000 reviews
-  - DistilBERT: Hugging Face fine-tuned (v2.1.0), achieves 88.2% test accuracy
-  - TF-IDF baseline: Logistic regression (v2.1.0), achieves 81.9% F1
-  - Held-out test F1: 88.6% (DistilBERT) vs. 80.3% (BiLSTM) vs. 81.9% (baseline)
-  - Generalization: Trained on Amazon reviews (4 domains); may not transfer to other review types without fine-tuning
-
-- **Deployment:**
-  - Streamlit app: `streamlit run app.py` (runs locally)
-  - Production deployment (Streamlit Cloud, AWS, etc.): Not yet configured
-  - Model loading: Local checkpoints from `outputs/`
-  - Open item: checkpoint hosting remains tracked in Issue #28
-
-- **Future Work:**
-  - Remove compatibility wrappers (Issue #59) once all consumers use new paths
-  - Additional model architectures (RoBERTa, XLNet)
-  - Cross-domain evaluation on different review datasets
-  - Active learning pipeline for efficient labeling
-
----
-
-**Last Updated:** 2026-05-04
-**Document Owner:** Luis Faria
-**Review Status:** Ready for team sign-off
+1. Freeze the accepted report and source commits.
+2. Build and inspect the deterministic ZIP.
+3. Extract and retest the ZIP.
+4. Record sizes and SHA-256 digests.
+5. Obtain group sign-off.
+6. Merge #89.
+7. Create and publish `v3.0.0` from the verified release commit.
