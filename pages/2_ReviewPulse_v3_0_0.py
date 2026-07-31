@@ -3,14 +3,11 @@
 import streamlit as st
 
 from src.absa.inference.api import predict_aspects
-from src.absa.inference.predictors import (
-    ALL_MODEL_OPTIONS,
-    exposes_token_evidence,
-    get_predictor,
-)
+from src.absa.inference.predictors import ALL_MODEL_OPTIONS, exposes_token_evidence
 from src.absa.interpretability.evidence import unsupported_evidence
 from src.absa.samples import get_random_sample
 from src.app.absa_results import first_evidence, render_result_grid
+from src.app.absa_service import load_aspect_predictor
 
 st.title("ReviewPulse v3.0.0")
 st.caption("DLE602 · three-class aspect-based sentiment analysis")
@@ -58,7 +55,8 @@ if st.button(
     disabled=not review.strip() or not aspects.strip(),
 ):
     try:
-        results = predict_aspects(review, aspects.split(","), model_name, get_predictor(model_name))
+        predictor = load_aspect_predictor(model_name)
+        results = predict_aspects(review, aspects.split(","), model_name, predictor)
     except (FileNotFoundError, OSError, RuntimeError, ValueError) as error:
         st.error(f"The selected model is unavailable: {error}")
     else:
