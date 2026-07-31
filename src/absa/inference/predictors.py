@@ -44,6 +44,20 @@ ALL_MODEL_OPTIONS = {
     "absa_distilbert": MODEL_OPTIONS["absa_distilbert"],
 }
 
+# Models that receive only the review and therefore repeat one prediction across
+# aspects. They report token evidence as unsupported; the adapters below are the
+# behavioural source of truth and `test_model_evidence_partition_is_exhaustive`
+# guards this constant against drift.
+REVIEW_ONLY_MODELS = frozenset(
+    {"absa_tfidf", "absa_target_lstm", "absa_target_gru", "absa_text_cnn"}
+)
+ASPECT_CONDITIONED_MODELS = frozenset({"absa_atae_lstm", "absa_distilbert"})
+
+
+def exposes_token_evidence(model_name: str) -> bool:
+    """Return True when *model_name* can produce aspect-specific token evidence."""
+    return model_name in ASPECT_CONDITIONED_MODELS
+
 
 def _payload(aspect: str, logits: torch.Tensor, model_name: str, token_evidence: dict) -> dict:
     probabilities = torch.softmax(logits, dim=-1)[0]

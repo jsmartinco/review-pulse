@@ -3,9 +3,14 @@
 import streamlit as st
 
 from src.absa.inference.api import predict_aspects
-from src.absa.inference.predictors import ALL_MODEL_OPTIONS, get_predictor
-from src.absa.interpretability.heatmap import render_token_heatmap_html
+from src.absa.inference.predictors import (
+    ALL_MODEL_OPTIONS,
+    exposes_token_evidence,
+    get_predictor,
+)
+from src.absa.interpretability.evidence import unsupported_evidence
 from src.absa.samples import get_random_sample
+from src.app.absa_results import first_evidence, render_result_grid
 
 st.title("ReviewPulse v3.0.0")
 st.caption("DLE602 · three-class aspect-based sentiment analysis")
@@ -21,16 +26,32 @@ model_name = st.selectbox(
     format_func=ALL_MODEL_OPTIONS.__getitem__,
 )
 
+# The review-only limitation describes the selected model, not any single aspect,
+# so it renders once here instead of repeating under every result card.
+model_exposes_evidence = exposes_token_evidence(model_name)
+if not model_exposes_evidence:
+    st.caption(unsupported_evidence(ALL_MODEL_OPTIONS[model_name])["limitations"])
+
 
 def load_sample() -> None:
+    """Fill both inputs with a curated multi-aspect demonstration review."""
     sample = get_random_sample(st.session_state.get("absa_review", ""))
     st.session_state["absa_review"] = sample.review
     st.session_state["absa_aspects"] = sample.aspects
 
 
 st.button("💡 Generate sample", on_click=load_sample)
-review = st.text_area("Review", placeholder="The food was great but the service was slow.", height=150, key="absa_review")
-aspects = st.text_input("Aspects, separated by commas", placeholder="food, service", key="absa_aspects")
+review = st.text_area(
+    "Review",
+    placeholder="The food was great but the service was slow.",
+    height=150,
+    key="absa_review",
+)
+aspects = st.text_input(
+    "Aspects, separated by commas",
+    placeholder="food, service",
+    key="absa_aspects",
+)
 if st.button(
     "Classify aspects",
     type="primary",
@@ -41,17 +62,9 @@ if st.button(
     except (FileNotFoundError, OSError, RuntimeError, ValueError) as error:
         st.error(f"The selected model is unavailable: {error}")
     else:
-        for result in results:
-            st.metric(result["aspect"], f"{result['label'].title()} · {result['confidence']:.1%}")
-            evidence = result["token_evidence"]
-            if evidence["status"] == "supported":
-                st.markdown(f"**{evidence['method']}**")
-                st.markdown(
-                    render_token_heatmap_html(review, evidence["tokens"]),
-                    unsafe_allow_html=True,
-                )
-                st.caption("Darker shading indicates a larger score within this aspect view.")
-                st.caption(evidence["caveat"])
-                st.caption(f"Limitation: {evidence['limitations']}")
-            else:
-                st.info(evidence["limitations"])
+        render_result_grid(results, review, model_exposes_evidence)
+        evidence = first_evidence(results) if model_exposes_evidence else None
+        if evidence is not None:
+            st.caption(f"**{evidence['method']}** · darker shading indicates a larger score within this aspect view.")
+            st.caption(evidence["caveat"])
+            st.caption(f"Limitation: {evidence['limitations']}")
