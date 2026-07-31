@@ -44,7 +44,7 @@ def render_token_heatmap_html(review: str, tokens: Sequence[dict]) -> str:
     relatives = _relative_scores(tokens)
     cursor = 0
     fragments: list[str] = []
-    for token, relative in zip(tokens, relatives):
+    for token, relative in zip(tokens, relatives, strict=True):
         start, end = int(token["start"]), int(token["end"])
         surface = str(token["token"])
         if start < cursor or end < start or end > len(review) or review[start:end] != surface:

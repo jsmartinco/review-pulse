@@ -89,5 +89,7 @@ def render_result_grid(results: Sequence[dict], review: str, show_evidence: bool
     columns_per_row = min(len(results), MAX_CARDS_PER_ROW) or 1
     for row in rows:
         columns = st.columns(columns_per_row)
-        for column, result in zip(columns, row):
+        # A partial final row has fewer results than columns, so this zip is
+        # intentionally non-strict.
+        for column, result in zip(columns, row, strict=False):
             render_aspect_card(column, result, review, show_evidence)
