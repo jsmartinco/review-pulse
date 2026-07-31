@@ -10,6 +10,7 @@ from typing import Any
 
 import streamlit as st
 
+from src.absa.inference.comparison import Comparison
 from src.absa.interpretability.heatmap import render_token_heatmap_html
 
 
@@ -23,6 +24,7 @@ LABEL_STYLE: dict[str, str] = {
     "negative": "#f85149",
 }
 _FALLBACK_COLOUR = "#8b949e"
+_MISSING_CSS = f"color: {_FALLBACK_COLOUR}; font-style: italic"
 
 
 def format_confidence(confidence: float) -> str:
@@ -58,6 +60,23 @@ def first_evidence(results: Sequence[dict]) -> dict | None:
         if has_token_evidence(result):
             return result["token_evidence"]
     return None
+
+
+def comparison_css(comparison: Comparison) -> Any:
+    """Build the per-cell CSS frame for a comparison matrix.
+
+    Cells are coloured from the label frame rather than by parsing the display
+    text, and an unavailable artifact is muted and italicised instead of being
+    coloured as a sentiment.
+    """
+    return comparison.labels.map(
+        lambda label: f"color: {label_colour(label)}" if label else _MISSING_CSS
+    )
+
+
+def style_comparison(comparison: Comparison) -> Any:
+    """Return the display frame styled with one colour per sentiment."""
+    return comparison.display.style.apply(lambda _frame: comparison_css(comparison), axis=None)
 
 
 def render_aspect_card(container, result: dict, review: str, show_evidence: bool) -> None:
