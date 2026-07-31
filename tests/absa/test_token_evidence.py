@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 import pytest
 import torch
@@ -9,7 +11,11 @@ from src.absa.interpretability.evidence import (
     supported_evidence,
     unsupported_evidence,
 )
-from src.absa.interpretability.heatmap import render_token_heatmap_html
+from src.absa.interpretability.heatmap import (
+    ALPHA_FLOOR,
+    ALPHA_RANGE,
+    render_token_heatmap_html,
+)
 
 
 def test_supported_and_unsupported_payloads_are_explicit():
@@ -42,6 +48,44 @@ def test_heatmap_preserves_visible_text_and_escapes_html():
     assert "<Great>" not in rendered
     assert "white-space: pre-wrap" in rendered
     assert "token score: 0.8000" in rendered
+
+
+def test_heatmap_leaves_the_weakest_token_effectively_unshaded():
+    """Softmax attention clusters in a narrow band; the floor must still read as off."""
+    review = "abcd"
+    tokens = [
+        {"token": "a", "start": 0, "end": 1, "score": 0.24},
+        {"token": "b", "start": 1, "end": 2, "score": 0.25},
+        {"token": "c", "start": 2, "end": 3, "score": 0.26},
+        {"token": "d", "start": 3, "end": 4, "score": 0.25},
+    ]
+    rendered = render_token_heatmap_html(review, tokens)
+    alphas = [float(value) for value in re.findall(r"rgba\(255, 126, 95, ([0-9.]+)\)", rendered)]
+    assert alphas[0] == pytest.approx(ALPHA_FLOOR)
+    assert alphas[2] == pytest.approx(ALPHA_FLOOR + ALPHA_RANGE)
+    assert max(alphas) - min(alphas) == pytest.approx(ALPHA_RANGE)
+
+
+def test_heatmap_uses_a_flat_floor_when_every_score_is_equal():
+    review = "ab"
+    tokens = [
+        {"token": "a", "start": 0, "end": 1, "score": 0.5},
+        {"token": "b", "start": 1, "end": 2, "score": 0.5},
+    ]
+    rendered = render_token_heatmap_html(review, tokens)
+    alphas = [float(value) for value in re.findall(r"rgba\(255, 126, 95, ([0-9.]+)\)", rendered)]
+    assert alphas == [pytest.approx(ALPHA_FLOOR), pytest.approx(ALPHA_FLOOR)]
+
+
+def test_heatmap_tooltip_reports_the_raw_score_not_the_scaled_value():
+    review = "ab"
+    tokens = [
+        {"token": "a", "start": 0, "end": 1, "score": 0.0412},
+        {"token": "b", "start": 1, "end": 2, "score": 0.1180},
+    ]
+    rendered = render_token_heatmap_html(review, tokens)
+    assert "token score: 0.0412" in rendered
+    assert "token score: 0.1180" in rendered
 
 
 def test_heatmap_rejects_misaligned_payload():
