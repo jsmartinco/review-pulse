@@ -5,7 +5,7 @@ produced by :mod:`src.absa.inference.api`. It lives outside ``src/absa`` so that
 package stays free of Streamlit imports and remains testable without the UI stack.
 """
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 import streamlit as st
@@ -79,8 +79,19 @@ def style_comparison(comparison: Comparison) -> Any:
     return comparison.display.style.apply(lambda _frame: comparison_css(comparison), axis=None)
 
 
-def render_aspect_card(container, result: dict, review: str, show_evidence: bool) -> None:
-    """Render one aspect prediction as a compact card inside *container*."""
+def render_aspect_card(
+    container,
+    result: dict,
+    review: str,
+    show_evidence: bool,
+    gold: Mapping[str, str] | None = None,
+) -> None:
+    """Render one aspect prediction as a compact card inside *container*.
+
+    A gold polarity is shown only when the caller supplies one for this aspect,
+    which happens while the review still matches an annotated sample.
+    """
+    gold_label = (gold or {}).get(result["aspect"])
     with container:
         with st.container(border=True):
             st.caption(result["aspect"])
@@ -91,6 +102,9 @@ def render_aspect_card(container, result: dict, review: str, show_evidence: bool
                 f'{format_confidence(result["confidence"])}</span>',
                 unsafe_allow_html=True,
             )
+            if gold_label:
+                match = "✓" if gold_label == result["label"] else "✗"
+                st.caption(f"{match} gold: {gold_label}")
             if show_evidence and has_token_evidence(result):
                 st.markdown(
                     render_token_heatmap_html(review, result["token_evidence"]["tokens"]),
@@ -98,7 +112,12 @@ def render_aspect_card(container, result: dict, review: str, show_evidence: bool
                 )
 
 
-def render_result_grid(results: Sequence[dict], review: str, show_evidence: bool) -> None:
+def render_result_grid(
+    results: Sequence[dict],
+    review: str,
+    show_evidence: bool,
+    gold: Mapping[str, str] | None = None,
+) -> None:
     """Lay out every aspect result as cards, wrapping after `MAX_CARDS_PER_ROW`.
 
     Rows always allocate the full column count so a partial final row keeps the
@@ -111,4 +130,4 @@ def render_result_grid(results: Sequence[dict], review: str, show_evidence: bool
         # A partial final row has fewer results than columns, so this zip is
         # intentionally non-strict.
         for column, result in zip(columns, row, strict=False):
-            render_aspect_card(column, result, review, show_evidence)
+            render_aspect_card(column, result, review, show_evidence, gold)

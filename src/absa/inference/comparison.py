@@ -7,7 +7,7 @@ run in parallel, and the comparison is small enough that sequencing is not a
 constraint.
 """
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any, NamedTuple
 
 import pandas as pd
@@ -18,6 +18,20 @@ from .predictors import MODEL_OPTIONS
 
 ARTIFACT_MISSING = "artifact missing"
 MISSING_LABEL = ""
+GOLD_COLUMN = "Gold (SemEval)"
+
+# Shorter headers than MODEL_OPTIONS. With a gold column the full labels overflow
+# the content width and clip the rightmost model, which a reader exploring the
+# app unattended would simply miss. The review-only and aspect-conditioned
+# distinction is kept, since it is what the matrix exists to show.
+MATRIX_COLUMNS: dict[str, str] = {
+    "absa_tfidf": "TF-IDF · review-only",
+    "absa_target_lstm": "LSTM · review-only",
+    "absa_target_gru": "GRU · review-only",
+    "absa_text_cnn": "Text CNN · review-only",
+    "absa_atae_lstm": "ATAE-LSTM · aspect",
+    "absa_distilbert": "DistilBERT · aspect",
+}
 
 # Errors that mean "this artifact could not be loaded or run". A ValueError is
 # deliberately excluded: it signals an invalid request, such as an unknown model
@@ -46,8 +60,12 @@ def build_comparison(
     aspects: Sequence[str],
     model_names: Sequence[str],
     get_predictor: Callable[[str], Any],
+    gold: Mapping[str, str] | None = None,
 ) -> Comparison:
     """Build an aspects-by-models comparison of one review.
+
+    When *gold* is supplied it becomes the leading column, so a reader can check
+    each model against the dataset annotation rather than against a claim.
 
     Raises:
         ValueError: when the review is empty or no usable aspect is supplied.
@@ -60,8 +78,11 @@ def build_comparison(
 
     display: dict[str, list[str]] = {}
     labels: dict[str, list[str]] = {}
+    if gold:
+        display[GOLD_COLUMN] = [gold.get(aspect, "").title() for aspect in resolved_aspects]
+        labels[GOLD_COLUMN] = [gold.get(aspect, MISSING_LABEL) for aspect in resolved_aspects]
     for model_name in model_names:
-        column = MODEL_OPTIONS.get(model_name, model_name)
+        column = MATRIX_COLUMNS.get(model_name, MODEL_OPTIONS.get(model_name, model_name))
         try:
             predictor = get_predictor(model_name)
             results = predict_aspects(review, resolved_aspects, model_name, predictor)
