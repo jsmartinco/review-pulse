@@ -77,7 +77,7 @@ def test_find_sample_drops_gold_once_the_review_is_edited():
 # Provenance: samples must match the frozen official test split
 # ---------------------------------------------------------------------------
 
-def _frozen_gold() -> dict[str, dict[str, str]]:
+def _frozen_gold() -> tuple[dict[str, dict[str, str]], dict[str, str]]:
     if not PREDICTIONS.exists():
         pytest.skip("Frozen evaluation predictions are not available locally")
     by_sentence: dict[str, dict[str, str]] = defaultdict(dict)
