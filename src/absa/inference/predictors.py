@@ -53,6 +53,12 @@ REVIEW_ONLY_MODELS = frozenset(
 )
 ASPECT_CONDITIONED_MODELS = frozenset({"absa_atae_lstm", "absa_distilbert"})
 
+DISTILBERT_ARTIFACT_HINT = (
+    "Obtain the complete v3 artifact from the GitHub repository with Git LFS: "
+    "run `git lfs pull` in a full checkout. See "
+    "docs/dle602-a3/quickstart.md#path-b---run-all-six-v3-models-from-github."
+)
+
 
 def exposes_token_evidence(model_name: str) -> bool:
     """Return True when *model_name* can produce aspect-specific token evidence."""
@@ -210,6 +216,12 @@ class AtaeLstmAspectPredictor:
 
 class DistilBertAspectPredictor:
     def __init__(self, path: Path = ABSA_OUTPUTS_DIR / "distilbert") -> None:
+        path = Path(path)
+        if not path.is_dir():
+            raise FileNotFoundError(
+                f"Missing v3 DistilBERT artifact directory: {path}\n\n"
+                f"{DISTILBERT_ARTIFACT_HINT}"
+            )
         self.tokenizer = AutoTokenizer.from_pretrained(path, local_files_only=True)
         self.model = ABSADistilBERT.from_pretrained(path, local_files_only=True)
         self.model.eval()
