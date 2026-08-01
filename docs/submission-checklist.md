@@ -9,6 +9,7 @@ Use this checklist against one frozen source commit. Do not create the final tag
 - [ ] Submission ZIP SHA-256 recorded: `________________`
 - [ ] ZIP size recorded: `________________`
 - [ ] LMS upload limit confirmed: `________________`
+- [ ] Artifact mode chosen against that limit. Measured on `release/v3.0.0`: `none` 2.5 MB, `lightweight` 52 MB, `all` 288 MB
 - [ ] `v3.0.0` tag points to the verified source commit
 - [ ] GitHub release notes and submitted package describe the same contents
 
@@ -20,7 +21,6 @@ The implementation baseline before #89 is merge commit `0f02be3` (PR #100). The 
 - [ ] Canonical four-model results remain separate from exploratory GRU/TextCNN results
 - [ ] Tables, figures and token-evidence examples trace to frozen outputs
 - [ ] Attention and attribution are described as indicative, not causal
-- [ ] Group ID appears on the cover/footer
 - [ ] Contribution record and dated hand-offs are confirmed by all members
 - [ ] Academic Integrity Declaration and Statement of Acknowledgement are complete
 - [ ] Final PDF is copied into the package
@@ -54,7 +54,7 @@ pip install -r requirements.txt -c constraints-a3.txt
 - [ ] Python and platform versions recorded
 - [ ] Installation succeeds without undocumented manual changes
 - [ ] Resolved critical dependency versions match `constraints-a3.txt`
-- [ ] CPU-only import and application startup succeed
+- [ ] CPU-only import and application startup succeed. Verified on `release/v3.0.0`: every neural predictor loaded wholly on CPU in the clean room **even though MPS was available on that host**, because all four torch adapters pin `map_location="cpu"`
 
 ## Automated verification
 
@@ -65,6 +65,7 @@ pip install -r requirements.txt -c constraints-a3.txt
 ```
 
 - [ ] Full suite passes; counts and expected skips are recorded
+- [ ] Sample-provenance tests **executed rather than skipped**: run where `outputs/absa/evaluation/predictions.csv` exists and confirm the six `test_sample_matches_the_official_test_split` cases are not in the skip list. They skip silently in a clean clone, so a green suite there does not evidence this check (see `dle602-a3/release-verification.md`)
 - [ ] Legacy ISY503 regression path remains functional
 - [ ] All available v3 artifacts clean-load
 - [ ] `food` and `service` smoke predictions return one result per aspect
