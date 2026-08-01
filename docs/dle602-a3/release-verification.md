@@ -138,11 +138,11 @@ approved source file, so the manual secret review in
 
 ## 7. Academic report linkage
 
-The report v3 Markdown source and its current PDF are committed in
-`lfariabr/masters-swe-ai@0bec946`. The release notes now reference that version,
-and the submission checklist contains only the contribution and final-PDF gates
-that still require sign-off. If the report source changes again, regenerate the
-PDF and record the new academic commit before building the submission archive.
+The report v3 Markdown source is committed in
+`lfariabr/masters-swe-ai@5b5d671`; the current PDF was last regenerated at
+`0bec946`, before the final test-count synchronisation. The submission checklist
+therefore retains the contribution and final-PDF gates. Regenerate the PDF and
+record the resulting academic commit before building the submission archive.
 
 ## 8. Still outstanding before the tag
 
