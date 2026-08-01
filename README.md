@@ -9,7 +9,7 @@ The current DLE602 release compares six models on SemEval-2014 Restaurants. TF-I
 
 The Streamlit application preserves both academic phases as separate workflows. Token evidence is available only for ATAE-LSTM attention and DistilBERT gradient × input attribution, and is presented as indicative rather than causal.
 
-> **DLE602 marker quick start:** [`docs/dle602-a3/quickstart.md`](docs/dle602-a3/quickstart.md) gives three self-contained paths - run the submitted lightweight ZIP, run all six models from this repository, or reproduce training and evaluation. Neither the application nor inference requires the SemEval corpus.
+> **DLE602 marker quick start:** [`docs/dle602-a3/quickstart.md`](docs/dle602-a3/quickstart.md) gives three verified paths - run the submitted lightweight ZIP, run all six models from this repository, or reproduce training and evaluation from a full checkout with the licensed corpus. Neither the application nor inference requires the SemEval corpus.
 
 [Main study repo](https://github.com/lfariabr/masters-swe-ai)
 
