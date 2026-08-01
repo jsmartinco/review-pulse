@@ -68,6 +68,32 @@ all four core models clean-load from the LFS artifacts and return one prediction
 per aspect. The application is therefore usable by a reader who never obtains the
 dataset.
 
+### Inference runs on CPU by construction, not by accident
+
+Every neural predictor loaded wholly on CPU in the clean room. Parameter devices
+were inspected directly after loading:
+
+| Model | Parameter devices |
+|---|---|
+| TF-IDF review-only | not applicable, scikit-learn |
+| LSTM review-only | `cpu` |
+| GRU review-only | `cpu` |
+| Text CNN review-only | `cpu` |
+| ATAE-LSTM | `cpu` |
+| DistilBERT sentence-pair | `cpu` |
+
+This held **while MPS was available on the host** (`torch.backends.mps.is_available()`
+returned `True`, CUDA `False`), so the result is not an artefact of a
+CPU-only machine. All four torch adapters in `src/absa/inference/predictors.py`
+pin `map_location="cpu"` when loading a checkpoint, which makes the inference
+path device-independent.
+
+This evidences the A2 risk-register contingency for artifact loading failure,
+"fall back to CPU inference", and the checklist item requiring CPU-only import
+and application startup. A marker on any machine, with or without an accelerator,
+runs the same path. Training is unaffected: `src/absa/training/distilbert.py`
+still selects CUDA, then MPS, then CPU, and the recorded DistilBERT run used MPS.
+
 Commands that genuinely require the corpus — `src.absa.data.audit` and
 `src.absa.evaluation.runner` — previously exited with a bare `FileNotFoundError`
 traceback naming an absolute path. Both are documented first-run commands, so a
@@ -108,7 +134,25 @@ Structural filtering cannot detect a credential embedded inside an otherwise
 approved source file, so the manual secret review in
 `docs/submission-checklist.md` remains required before sign-off.
 
-## 7. Still outstanding before the tag
+## 7. Pending documentation reconciliation
+
+`docs/releaseNotes/v3.0.0.md` still points the academic package at report v2 and
+still lists Group ID as something to confirm. Both are superseded, and the
+correction is held in an uncommitted stash carrying the v3 report reference.
+
+The obsolete Group ID item was removed from `docs/submission-checklist.md` on
+this branch, which means the stash no longer applies whole: its checklist hunk
+tries to delete a line that is already gone. Reconcile it with the final report
+commit as follows.
+
+- The `docs/releaseNotes/v3.0.0.md` hunk still applies cleanly and removes the
+  remaining Group ID mention along with updating the report reference.
+- The `docs/submission-checklist.md` hunk is now redundant. Discard it and keep
+  the version on this branch.
+
+After reconciliation no Group ID reference remains anywhere in the repository.
+
+## 8. Still outstanding before the tag
 
 - Final A3 report PDF, and its commit recorded in the checklist.
 - Contribution evidence from all group members.

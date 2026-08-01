@@ -21,7 +21,6 @@ The implementation baseline before #89 is merge commit `0f02be3` (PR #100). The 
 - [ ] Canonical four-model results remain separate from exploratory GRU/TextCNN results
 - [ ] Tables, figures and token-evidence examples trace to frozen outputs
 - [ ] Attention and attribution are described as indicative, not causal
-- [ ] Group ID appears on the cover/footer
 - [ ] Contribution record and dated hand-offs are confirmed by all members
 - [ ] Academic Integrity Declaration and Statement of Acknowledgement are complete
 - [ ] Final PDF is copied into the package
@@ -55,7 +54,7 @@ pip install -r requirements.txt -c constraints-a3.txt
 - [ ] Python and platform versions recorded
 - [ ] Installation succeeds without undocumented manual changes
 - [ ] Resolved critical dependency versions match `constraints-a3.txt`
-- [ ] CPU-only import and application startup succeed
+- [ ] CPU-only import and application startup succeed. Verified on `release/v3.0.0`: every neural predictor loaded wholly on CPU in the clean room **even though MPS was available on that host**, because all four torch adapters pin `map_location="cpu"`
 
 ## Automated verification
 
