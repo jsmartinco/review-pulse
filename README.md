@@ -9,6 +9,8 @@ The current DLE602 release compares six models on SemEval-2014 Restaurants. TF-I
 
 The Streamlit application preserves both academic phases as separate workflows. Token evidence is available only for ATAE-LSTM attention and DistilBERT gradient × input attribution, and is presented as indicative rather than causal.
 
+> **DLE602 marker quick start:** [`docs/dle602-a3/quickstart.md`](docs/dle602-a3/quickstart.md) gives three verified paths - run the submitted lightweight ZIP, run all six models from this repository, or reproduce training and evaluation from a full checkout with the licensed corpus. Neither the application nor inference requires the SemEval corpus.
+
 [Main study repo](https://github.com/lfariabr/masters-swe-ai)
 
 ## DLE602 v3 Results
@@ -100,7 +102,14 @@ review-pulse/
 
 ## Setup
 
+This is the primary path and it runs the DLE602 v3 application. Clone with Git LFS so the model artifacts arrive as files rather than pointers:
+
 ```bash
+git lfs install
+git clone https://github.com/lfariabr/review-pulse.git
+cd review-pulse
+git lfs pull
+
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt -c constraints-a3.txt
@@ -113,7 +122,14 @@ Windows:
 pip install -r requirements.txt -c constraints-a3.txt
 ```
 
-Place `.review` data files under `data/`:
+That is everything needed to run every model and both application workflows. **No dataset is required.** The trained artifacts are versioned, so inference and the Streamlit app work without any dataset download.
+
+One exception applies to the legacy ISY503 DistilBERT: it is a compact checkpoint whose frozen base encoder weights come from `distilbert-base-uncased` through Hugging Face, so a machine with no network access and no Hugging Face cache reports that one model unavailable. See the DistilBERT note under [Model Artifacts](#model-artifacts). No v3 model is affected: the five small ones are read straight from disk, and the v3 DistilBERT directory is self-contained and loaded with `local_files_only`.
+
+Two datasets are optional, and only for regenerating results:
+
+- **SemEval-2014 Restaurants** is needed to retrain or re-evaluate the v3 models. It is not redistributed; see [`docs/dle602-a3/semeval-restaurants.md`](docs/dle602-a3/semeval-restaurants.md).
+- **Amazon `.review` files** are legacy ISY503 inputs, used only by the v1/v2 data pipeline and its tests. The packaged application does not need them, and the tests that use them skip when they are absent. To enable that pipeline, place them under `data/`:
 
 ```text
 data/
@@ -317,8 +333,10 @@ Current status:
 - `docs/releaseNotes/v2.2.0.md` - modular package release
 - `docs/releaseNotes/v2.3.0.md` - compatibility wrapper removal release
 - `docs/releaseNotes/v3.0.0.md` - consolidated v3 delivery status and release gates
+- `docs/dle602-a3/quickstart.md` - **DLE602 marker quick start**: submitted ZIP, full repository and reproduction paths
 - `docs/dle602-a3/` - v3 environment, SemEval provenance and smoke instructions
 - `docs/dle602-a3/submission-package.md` - deterministic A3 ZIP modes and verification
+- `docs/dle602-a3/release-verification.md` - clean-room install, LFS, CPU inference and package sizes
 
 ## Issue Creator (batch issue helper)
 
