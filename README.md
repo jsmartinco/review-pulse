@@ -317,8 +317,10 @@ pytest tests/
 
 Current status:
 
-- Full suite on the #89 package candidate: 271 passed, 8 skipped.
-- Skips apply only when the optional, gitignored legacy Amazon dataset is absent.
+- Development suite: 363 passed, 3 skipped.
+- The three skips are real-data integration checks that require the optional,
+  gitignored legacy Amazon dataset. Parser aggregation always runs against
+  synthetic four-domain fixtures.
 
 ## Documentation Map
 
