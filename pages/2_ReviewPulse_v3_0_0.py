@@ -89,7 +89,13 @@ if st.button(
             predictor = load_aspect_predictor(model_name)
             results = predict_aspects(review, aspects.split(","), model_name, predictor)
     except (FileNotFoundError, OSError, RuntimeError, ValueError) as error:
-        st.error(f"The selected model is unavailable: {error}")
+        # build_comparison reports per-column artifact failures as sentinels, so
+        # compare mode only reaches here through input validation and there is no
+        # single selected model to blame.
+        if comparing:
+            st.error(f"Comparison request is invalid: {error}")
+        else:
+            st.error(f"The selected model is unavailable: {error}")
     else:
         if comparing:
             st.dataframe(style_comparison(comparison), width="stretch")
