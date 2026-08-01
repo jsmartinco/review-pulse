@@ -136,28 +136,19 @@ Structural filtering cannot detect a credential embedded inside an otherwise
 approved source file, so the manual secret review in
 `docs/submission-checklist.md` remains required before sign-off.
 
-## 7. Pending documentation reconciliation
+## 7. Academic report linkage
 
-`docs/releaseNotes/v3.0.0.md` still points the academic package at report v2 and
-still lists Group ID as something to confirm. Both are superseded, and the
-correction is held in an uncommitted stash carrying the v3 report reference.
-
-The obsolete Group ID item was removed from `docs/submission-checklist.md` on
-this branch, which means the stash no longer applies whole: its checklist hunk
-tries to delete a line that is already gone. Reconcile it with the final report
-commit as follows.
-
-- The `docs/releaseNotes/v3.0.0.md` hunk still applies cleanly and removes the
-  remaining Group ID mention along with updating the report reference.
-- The `docs/submission-checklist.md` hunk is now redundant. Discard it and keep
-  the version on this branch.
-
-After reconciliation no Group ID reference remains anywhere in the repository.
+The report v3 Markdown source and its current PDF are committed in
+`lfariabr/masters-swe-ai@0bec946`. The release notes now reference that version,
+and the submission checklist contains only the contribution and final-PDF gates
+that still require sign-off. If the report source changes again, regenerate the
+PDF and record the new academic commit before building the submission archive.
 
 ## 8. Still outstanding before the tag
 
 - Final A3 report PDF, and its commit recorded in the checklist.
 - Contribution evidence from all group members.
-- Confirmed LMS upload limit, which selects the artifact mode.
+- Confirmed LMS upload limit. The 51.53 MiB lightweight candidate is the planned
+  mode for the anticipated 100 MB ceiling; the exact limit still needs confirmation.
 - Final archive built from the post-merge commit, with its SHA-256 recorded.
 - `v3.0.0` tag, created only after the items above.
