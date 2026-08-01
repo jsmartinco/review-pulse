@@ -1,8 +1,11 @@
 from pathlib import Path
 
+import pytest
+
 from src.absa.inference.api import predict_aspects
 from src.absa.inference.predictors import (
     ALL_MODEL_OPTIONS,
+    DistilBertAspectPredictor,
     MODEL_OPTIONS,
     OPTIONAL_MODEL_OPTIONS,
     get_predictor,
@@ -47,6 +50,18 @@ def test_predictor_registry_rejects_unknown_model_without_loading_an_artifact():
         assert "Unknown v3 model" in str(error)
     else:
         raise AssertionError("Unknown models must not silently select a predictor")
+
+
+def test_distilbert_predictor_reports_missing_local_artifact(tmp_path: Path) -> None:
+    missing = tmp_path / "distilbert"
+
+    with pytest.raises(FileNotFoundError) as caught:
+        DistilBertAspectPredictor(missing)
+
+    message = str(caught.value)
+    assert str(missing) in message
+    assert "git lfs pull" in message
+    assert "quickstart.md#path-b---run-all-six-v3-models-from-github" in message
 
 
 def test_v3_page_uses_the_explicit_six_model_registry():
