@@ -4,11 +4,13 @@ import pytest
 
 from src.absa.inference.comparison import (
     ARTIFACT_MISSING,
+    GOLD_COLUMN,
+    MATRIX_COLUMNS,
     MISSING_LABEL,
     build_comparison,
     format_cell,
 )
-from src.absa.inference.predictors import MODEL_OPTIONS
+from src.absa.inference.predictors import ALL_MODEL_OPTIONS, MODEL_OPTIONS
 
 
 CORE_MODELS = list(MODEL_OPTIONS)
@@ -52,7 +54,7 @@ def test_format_cell_uses_title_case_and_one_decimal():
 def test_matrix_is_aspects_by_models():
     comparison = build_comparison(REVIEW, ASPECTS, CORE_MODELS, _factory())
     assert list(comparison.display.index) == ASPECTS
-    assert list(comparison.display.columns) == [MODEL_OPTIONS[name] for name in CORE_MODELS]
+    assert list(comparison.display.columns) == [MATRIX_COLUMNS[name] for name in CORE_MODELS]
     assert comparison.display.shape == (2, 4)
     assert comparison.labels.shape == comparison.display.shape
 
@@ -60,9 +62,9 @@ def test_matrix_is_aspects_by_models():
 def test_review_only_columns_repeat_one_value_across_aspects():
     """This repetition is the RQ1 finding the matrix exists to surface."""
     comparison = build_comparison(REVIEW, ASPECTS, CORE_MODELS, _factory())
-    review_only = comparison.display[MODEL_OPTIONS["absa_tfidf"]]
+    review_only = comparison.display[MATRIX_COLUMNS["absa_tfidf"]]
     assert review_only.nunique() == 1
-    aspect_aware = comparison.display[MODEL_OPTIONS["absa_atae_lstm"]]
+    aspect_aware = comparison.display[MATRIX_COLUMNS["absa_atae_lstm"]]
     assert aspect_aware.nunique() == 2
 
 
@@ -73,17 +75,17 @@ def test_missing_artifact_marks_only_its_own_column():
         CORE_MODELS,
         _factory({"absa_distilbert": FileNotFoundError("no checkpoint")}),
     )
-    missing = comparison.display[MODEL_OPTIONS["absa_distilbert"]]
+    missing = comparison.display[MATRIX_COLUMNS["absa_distilbert"]]
     assert list(missing) == [ARTIFACT_MISSING, ARTIFACT_MISSING]
-    assert list(comparison.labels[MODEL_OPTIONS["absa_distilbert"]]) == [MISSING_LABEL] * 2
-    intact = comparison.display[MODEL_OPTIONS["absa_tfidf"]]
+    assert list(comparison.labels[MATRIX_COLUMNS["absa_distilbert"]]) == [MISSING_LABEL] * 2
+    intact = comparison.display[MATRIX_COLUMNS["absa_tfidf"]]
     assert ARTIFACT_MISSING not in list(intact)
 
 
 @pytest.mark.parametrize("error", [FileNotFoundError("gone"), OSError("unreadable"), RuntimeError("bad")])
 def test_every_artifact_error_type_becomes_a_sentinel(error):
     comparison = build_comparison(REVIEW, ASPECTS, CORE_MODELS, _factory({"absa_tfidf": error}))
-    assert list(comparison.display[MODEL_OPTIONS["absa_tfidf"]]) == [ARTIFACT_MISSING] * 2
+    assert list(comparison.display[MATRIX_COLUMNS["absa_tfidf"]]) == [ARTIFACT_MISSING] * 2
 
 
 def test_all_models_missing_still_returns_a_full_shaped_matrix():
@@ -140,6 +142,50 @@ def test_models_are_loaded_sequentially_in_the_requested_order():
     assert order == CORE_MODELS
 
 
+def test_gold_column_leads_the_matrix_when_supplied():
+    comparison = build_comparison(
+        REVIEW,
+        ASPECTS,
+        CORE_MODELS,
+        _factory(),
+        gold={"food": "positive", "service": "negative"},
+    )
+    assert list(comparison.display.columns)[0] == GOLD_COLUMN
+    assert list(comparison.display[GOLD_COLUMN]) == ["Positive", "Negative"]
+    assert list(comparison.labels[GOLD_COLUMN]) == ["positive", "negative"]
+
+
+def test_gold_column_is_absent_when_no_gold_is_supplied():
+    comparison = build_comparison(REVIEW, ASPECTS, CORE_MODELS, _factory())
+    assert GOLD_COLUMN not in comparison.display.columns
+    comparison = build_comparison(REVIEW, ASPECTS, CORE_MODELS, _factory(), gold={})
+    assert GOLD_COLUMN not in comparison.display.columns
+
+
+def test_gold_column_leaves_unannotated_aspects_blank():
+    comparison = build_comparison(
+        REVIEW,
+        ASPECTS,
+        CORE_MODELS,
+        _factory(),
+        gold={"food": "positive"},
+    )
+    assert list(comparison.display[GOLD_COLUMN]) == ["Positive", ""]
+    assert list(comparison.labels[GOLD_COLUMN]) == ["positive", MISSING_LABEL]
+
+
 def test_compare_mode_excludes_the_exploratory_models():
     assert "absa_target_gru" not in MODEL_OPTIONS
     assert "absa_text_cnn" not in MODEL_OPTIONS
+
+
+def test_every_model_has_a_matrix_column_name():
+    """A missing entry would silently fall back to the long MODEL_OPTIONS label."""
+    assert set(MATRIX_COLUMNS) == set(ALL_MODEL_OPTIONS)
+
+
+def test_matrix_headers_keep_the_review_only_distinction():
+    for model_name in ("absa_tfidf", "absa_target_lstm"):
+        assert "review-only" in MATRIX_COLUMNS[model_name]
+    for model_name in ("absa_atae_lstm", "absa_distilbert"):
+        assert "aspect" in MATRIX_COLUMNS[model_name]
