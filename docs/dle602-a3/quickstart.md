@@ -58,12 +58,12 @@ Its measured results are still reported: see the six-model table in [`six-model-
 
 ### Verifying the package
 
-`python -m pytest -q` is the verification command for this path. Expect roughly **349 passed and 16 skipped**. Every skip is an intentional absence, not a failure:
+`python -m pytest -q` is the verification command for this path. Expect roughly **355 passed and 11 skipped**. Every skip is an intentional absence, not a failure:
 
 | Skips | Reason |
 |---:|---|
 | 6 | Sample-provenance checks need `outputs/absa/evaluation/predictions.csv`, which is not redistributed |
-| 8 | Legacy Amazon `.review` files are not redistributed |
+| 3 | End-to-end accuracy, evaluation and training checks need the legacy Amazon `.review` corpus |
 | 2 | The package-builder tests need Git metadata, and an extracted ZIP is not a repository |
 
 Individual light models can also be smoke-tested:
@@ -108,7 +108,7 @@ python scripts/smoke_absa.py
 streamlit run app.py
 ```
 
-`scripts/smoke_absa.py` clean-loads all four canonical models and prints one prediction per aspect. Expect roughly **351 passed and 14 skipped** from the suite here: the six provenance skips and the eight legacy-data skips described above, without the two package-builder skips, since this is a real checkout.
+`scripts/smoke_absa.py` clean-loads all four canonical models and prints one prediction per aspect. Expect roughly **357 passed and 9 skipped** from the suite here: the six provenance skips and the three real-data integration skips described above, without the two package-builder skips, since this is a real checkout. Parser aggregation is always exercised against synthetic four-domain fixtures and does not need the licensed Amazon files.
 
 Inference uses CPU for all six models. The four `.pt` neural adapters explicitly load with `map_location="cpu"`; the local DistilBERT model is likewise not moved to an accelerator. An accelerator is therefore neither required nor used for prediction. See [`release-verification.md`](release-verification.md) for the recorded evidence.
 

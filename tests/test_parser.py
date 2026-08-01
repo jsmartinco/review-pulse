@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.data.parser import has_labeled_review_files, load_all_domains, load_unlabeled_domains, parse_review_file
+from src.data.parser import load_all_domains, load_unlabeled_domains, parse_review_file
 
 # Minimal pseudo-XML fixture — mirrors the real .review file format
 SAMPLE_VALID = """
@@ -68,45 +68,57 @@ def test_parse_multiple_reviews(tmp_path: Path) -> None:
     assert len(records) == 2
 
 
-# --- integration tests against real data ---
+# --- aggregate loading against a synthetic four-domain corpus ---
 
 @pytest.fixture
-def legacy_dataset() -> pd.DataFrame:
-    if not has_labeled_review_files():
-        pytest.skip("Legacy Amazon review data is not installed locally")
-    dataset = load_all_domains()
-    assert not dataset.empty, "Legacy review files exist but the parser returned no records"
+def synthetic_legacy_dataset(tmp_path: Path) -> pd.DataFrame:
+    for domain in ("books", "dvd", "electronics", "kitchen_&_housewares"):
+        domain_dir = tmp_path / domain
+        domain_dir.mkdir()
+        for filename, rating, text in (
+            ("positive.review", 5.0, f"Excellent {domain} product."),
+            ("negative.review", 1.0, f"Terrible {domain} product."),
+        ):
+            (domain_dir / filename).write_text(
+                "<review>"
+                f"<rating>{rating}</rating>"
+                f"<review_text>{text}</review_text>"
+                "</review>",
+                encoding="utf-8",
+            )
+
+    dataset = load_all_domains(data_dir=tmp_path)
+    assert not dataset.empty, "Synthetic review files exist but the parser returned no records"
     return dataset
 
-def test_load_all_domains_returns_dataframe() -> None:
-    df = load_all_domains()
+
+def test_load_all_domains_returns_dataframe(synthetic_legacy_dataset: pd.DataFrame) -> None:
+    df = synthetic_legacy_dataset
     assert isinstance(df, pd.DataFrame)
 
 
-def test_load_all_domains_has_required_columns(legacy_dataset: pd.DataFrame) -> None:
-    df = legacy_dataset
+def test_load_all_domains_has_required_columns(synthetic_legacy_dataset: pd.DataFrame) -> None:
+    df = synthetic_legacy_dataset
     assert set(df.columns) >= {"text", "rating", "label", "domain", "source_file"}
 
 
-def test_load_all_domains_four_domains(legacy_dataset: pd.DataFrame) -> None:
-    df = legacy_dataset
+def test_load_all_domains_four_domains(synthetic_legacy_dataset: pd.DataFrame) -> None:
+    df = synthetic_legacy_dataset
     assert df["domain"].nunique() == 4
 
 
-def test_load_all_domains_binary_labels(legacy_dataset: pd.DataFrame) -> None:
-    df = legacy_dataset
+def test_load_all_domains_binary_labels(synthetic_legacy_dataset: pd.DataFrame) -> None:
+    df = synthetic_legacy_dataset
     assert set(df["label"].unique()) == {0, 1}
 
 
-def test_load_all_domains_no_empty_text(legacy_dataset: pd.DataFrame) -> None:
-    df = legacy_dataset
+def test_load_all_domains_no_empty_text(synthetic_legacy_dataset: pd.DataFrame) -> None:
+    df = synthetic_legacy_dataset
     assert df["text"].str.strip().ne("").all()
 
 
-def test_load_all_domains_count(legacy_dataset: pd.DataFrame) -> None:
-    df = legacy_dataset
-    # 4 domains × 1,000 positive + 1,000 negative = 8,000
-    assert len(df) >= 7_000  # lenient lower bound in case a few rows lack review_text
+def test_load_all_domains_count(synthetic_legacy_dataset: pd.DataFrame) -> None:
+    assert len(synthetic_legacy_dataset) == 8
 
 
 def test_load_unlabeled_domains_schema() -> None:

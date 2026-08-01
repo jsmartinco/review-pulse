@@ -43,8 +43,8 @@ versions match the recorded baseline:
 
 | Environment | Passed | Skipped |
 |---|---:|---:|
-| Development machine | 357 | 8 |
-| Clean room | 351 | 14 |
+| Development machine | 363 | 3 |
+| Clean room | 357 | 9 |
 
 The six-test gap is **expected and must not be treated as a regression**. The
 sample-provenance tests in `tests/absa/test_samples.py` check each demo sample
@@ -58,8 +58,10 @@ there is not evidence that the samples still match the dataset. The check must b
 run where the frozen evaluation outputs exist. Confirmed on the development
 machine for this release: all six executed and passed rather than skipping.
 
-The eight development-machine skips are the legacy Amazon `.review` files, which
-are also not redistributed.
+The three development-machine skips are end-to-end accuracy, evaluation and
+training checks against the legacy Amazon `.review` corpus, which is also not
+redistributed. Five parser aggregation checks use a synthetic four-domain
+fixture and therefore run in every environment.
 
 ## 4. Offline behaviour
 
