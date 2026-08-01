@@ -7,8 +7,26 @@ from defusedxml import ElementTree as etree
 from .schema import AspectExample
 
 
+ACQUISITION_HINT = (
+    "SemEval-2014 Restaurants data is not redistributed with this repository. "
+    "Obtain the official XML from https://alt.qcri.org/semeval2014/task4/ and "
+    "place it with:\n"
+    "    python scripts/prepare_semeval_restaurants.py "
+    "--train <Restaurants_Train_v2.xml> --test <Restaurants_Test_Gold.xml>\n"
+    "See docs/dle602-a3/semeval-restaurants.md for the full procedure."
+)
+
+
 def parse_aspect_examples(path: Path, source_split: str) -> list[AspectExample]:
-    """Return one canonical record per annotated aspect term in *path*."""
+    """Return one canonical record per annotated aspect term in *path*.
+
+    Raises:
+        FileNotFoundError: when the dataset is absent, carrying acquisition
+            instructions rather than a bare path, since a reader following the
+            documented commands reaches this before obtaining the licensed data.
+    """
+    if not Path(path).is_file():
+        raise FileNotFoundError(f"Missing SemEval data file: {path}\n\n{ACQUISITION_HINT}")
     root = etree.parse(path).getroot()
     if root.tag != "sentences":
         raise ValueError(f"Expected <sentences> root in {path}")
