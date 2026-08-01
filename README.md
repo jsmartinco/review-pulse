@@ -122,7 +122,9 @@ Windows:
 pip install -r requirements.txt -c constraints-a3.txt
 ```
 
-That is everything needed to run every model and both application workflows. **No dataset is required.** The trained artifacts are versioned, so inference and the Streamlit app work without downloading anything further.
+That is everything needed to run every model and both application workflows. **No dataset is required.** The trained artifacts are versioned, so inference and the Streamlit app work without any dataset download.
+
+One exception applies to the legacy ISY503 DistilBERT: it is a compact checkpoint whose frozen base encoder weights come from `distilbert-base-uncased` through Hugging Face, so a machine with no network access and no Hugging Face cache reports that one model unavailable. See the DistilBERT note under [Model Artifacts](#model-artifacts). No v3 model is affected: the five small ones are read straight from disk, and the v3 DistilBERT directory is self-contained and loaded with `local_files_only`.
 
 Two datasets are optional, and only for regenerating results:
 

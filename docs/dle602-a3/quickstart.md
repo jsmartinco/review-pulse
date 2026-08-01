@@ -1,12 +1,12 @@
 # DLE602 marker quick start
 
-Three self-contained paths. Pick one; none of them depends on the others.
+Three paths. A and B are self-contained alternatives, so pick whichever suits you. Path C builds on a Path B checkout and additionally needs the licensed corpus.
 
 | Path | Start from | Models available | Needs SemEval data |
 |---|---|---|---|
-| [A](#path-a--run-the-submitted-lightweight-zip) | The submitted ZIP | Five v3 models, plus the complete v2.3.0 workflow | No |
-| [B](#path-b--run-all-six-v3-models-from-github) | A GitHub clone | All six v3 models | No |
-| [C](#path-c--reproduce-training-and-evaluation) | Path B, plus the licensed corpus | All six, retrained and re-evaluated | Yes |
+| [A](#path-a---run-the-submitted-lightweight-zip) | The submitted ZIP | Five v3 models, plus the complete v2.3.0 workflow | No |
+| [B](#path-b---run-all-six-v3-models-from-github) | A GitHub clone | All six v3 models | No |
+| [C](#path-c---reproduce-training-and-evaluation) | Path B, plus the licensed corpus | All six, retrained and re-evaluated | Yes |
 
 Every path installs with the reviewed constraint set, `pip install -r requirements.txt -c constraints-a3.txt`, which pins the versions the reported results were produced with.
 
@@ -42,13 +42,17 @@ Five v3 artifacts are included, covering every model except the transformer:
 | Text CNN review-only, exploratory | `outputs/absa/text_cnn.pt` |
 | ATAE-LSTM aspect-conditioned | `outputs/absa/atae_lstm.pt` |
 
-The complete ISY503 v2.3.0 artifact set is also included, so that page works fully, **including its own DistilBERT model**. That legacy checkpoint (`outputs/distilbert.pt`) is a binary review-level model and is unrelated to the v3 aspect-level DistilBERT.
+The complete ISY503 v2.3.0 artifact set is also included, so that page works, **including its own DistilBERT model**. That legacy checkpoint (`outputs/distilbert.pt`) is a binary review-level model and is unrelated to the v3 aspect-level DistilBERT.
+
+One caveat applies to the legacy model only: it is a compact checkpoint storing the classification head and fine-tuned layers, so its frozen base encoder weights are loaded from `distilbert-base-uncased` through Hugging Face. A machine with no network access and no Hugging Face cache reports it unavailable.
+
+The five v3 models in this package have no such dependency. They are read straight from disk with `joblib` or `torch.load` and never contact Hugging Face, so they work fully offline.
 
 ### The v3 DistilBERT checkpoint is deliberately absent
 
 `outputs/absa/distilbert/` is around 256 MB, which pushes the archive to roughly 288 MB against 52 MB without it. It is excluded to stay inside the submission size limit, as the Assessment 2 risk register anticipated.
 
-Selecting **DistilBERT sentence-pair** on the v3 page therefore reports a model-unavailable error instead of a prediction. The application does not fall back to another model, by design: a missing artifact is always visible rather than silently substituted. To obtain that model, use [Path B](#path-b--run-all-six-v3-models-from-github).
+Selecting **DistilBERT sentence-pair** on the v3 page therefore reports a model-unavailable error instead of a prediction. The application does not fall back to another model, by design: a missing artifact is always visible rather than silently substituted. To obtain that model, use [Path B](#path-b---run-all-six-v3-models-from-github).
 
 Its measured results are still reported: see the six-model table in [`six-model-results.md`](six-model-results.md) and the frozen evidence it links.
 
@@ -69,7 +73,7 @@ python scripts/smoke_target_gru.py
 python scripts/smoke_text_cnn.py
 ```
 
-> `scripts/smoke_absa.py` is **not** usable here. It exercises all four canonical models including the v3 DistilBERT, so it fails on this package. Use it on [Path B](#path-b--run-all-six-v3-models-from-github).
+> `scripts/smoke_absa.py` is **not** usable here. It exercises all four canonical models including the v3 DistilBERT, so it fails on this package. Use it on [Path B](#path-b---run-all-six-v3-models-from-github).
 
 This path is not a Git repository, so there is nothing to fetch with Git LFS.
 
@@ -106,7 +110,7 @@ streamlit run app.py
 
 `scripts/smoke_absa.py` clean-loads all four canonical models and prints one prediction per aspect. Expect roughly **351 passed and 14 skipped** from the suite here: the six provenance skips and the eight legacy-data skips described above, without the two package-builder skips, since this is a real checkout.
 
-Inference runs on CPU regardless of the machine, because every artifact adapter pins `map_location="cpu"`. An accelerator is not required and is not used for prediction. See [`release-verification.md`](release-verification.md) for the recorded evidence.
+Inference uses CPU for all six models. The four `.pt` neural adapters explicitly load with `map_location="cpu"`; the local DistilBERT model is likewise not moved to an accelerator. An accelerator is therefore neither required nor used for prediction. See [`release-verification.md`](release-verification.md) for the recorded evidence.
 
 The clone contains **no** SemEval data. Running the application or the smoke test does not need it.
 
@@ -160,7 +164,14 @@ python -m src.absa.evaluation.runner \
   --device auto
 ```
 
-Both write below `outputs/absa/evaluation/`. Metric definitions, the mixed-polarity subset and the verification gate on unverified artifacts are specified in [`evaluation-protocol.md`](evaluation-protocol.md).
+The two runs write to separate directories, so the supplemental comparison never overwrites the canonical evidence:
+
+| Run | Output directory |
+|---|---|
+| Canonical four-model | `outputs/absa/evaluation/` |
+| Supplemental six-model | `outputs/absa/evaluation-six-model/` |
+
+Metric definitions, the mixed-polarity subset and the verification gate on unverified artifacts are specified in [`evaluation-protocol.md`](evaluation-protocol.md).
 
 ### 4. Retrain, if required
 
