@@ -10,7 +10,7 @@ from src.absa.inference.predictors import (
     exposes_token_evidence,
 )
 from src.absa.interpretability.evidence import unsupported_evidence
-from src.absa.samples import get_random_sample
+from src.absa.samples import find_sample, get_random_sample
 from src.app.absa_results import first_evidence, render_result_grid, style_comparison
 from src.app.absa_service import load_aspect_predictor
 
@@ -72,11 +72,22 @@ aspects = st.text_input(
     placeholder="food, service",
     key="absa_aspects",
 )
+
+# Gold polarity belongs to the exact annotated sentence, so it is looked up from
+# the live text: editing the review drops the label instead of leaving a stale one.
+sample = find_sample(review)
+if sample is not None:
+    st.caption(
+        f"SemEval test sentence `{sample.sentence_id}` · {sample.scenario}. "
+        "Gold polarity is shown with each prediction."
+    )
+
 if st.button(
     "Compare models" if comparing else "Classify aspects",
     type="primary",
     disabled=not review.strip() or not aspects.strip(),
 ):
+    gold = sample.gold if sample is not None else None
     try:
         if comparing:
             comparison = build_comparison(
@@ -84,6 +95,7 @@ if st.button(
                 aspects.split(","),
                 list(MODEL_OPTIONS),
                 load_aspect_predictor,
+                gold=gold,
             )
         else:
             predictor = load_aspect_predictor(model_name)
@@ -101,7 +113,7 @@ if st.button(
             st.dataframe(style_comparison(comparison), width="stretch")
             st.caption(RQ1_HOOK)
         else:
-            render_result_grid(results, review, model_exposes_evidence)
+            render_result_grid(results, review, model_exposes_evidence, gold)
             evidence = first_evidence(results) if model_exposes_evidence else None
             if evidence is not None:
                 st.caption(
