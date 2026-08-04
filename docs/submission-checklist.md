@@ -139,16 +139,24 @@ Capture at least:
 
 ## Artifact strategy
 
-Record every included artifact:
+Record every included artifact. The v3 models answer the research questions; the four
+legacy v2 files are shipped by every artifact-bearing mode because the preserved ISY503
+page needs them. `Bytes` and `SHA-256` are properties of the final package and stay blank
+until it is built; `Runtime/network dependency` is a stable property of the artifact and is
+recorded now.
 
-| Artifact | Included? | Bytes | SHA-256 | Runtime/network dependency |
-|---|:---:|---:|---|---|
-| TF-IDF | [ ] | | | |
-| Target LSTM | [ ] | | | |
-| Target GRU | [ ] | | | |
-| TextCNN | [ ] | | | |
-| ATAE-LSTM | [ ] | | | |
-| DistilBERT | [ ] | | | |
+| Artifact | Track | Included? | Bytes | SHA-256 | Runtime/network dependency |
+|---|---|:---:|---:|---|---|
+| TF-IDF | v3 | [ ] | | | None; `joblib` load from disk |
+| Target LSTM | v3 | [ ] | | | None; `torch.load` from disk |
+| Target GRU | v3 | [ ] | | | None; `torch.load` from disk |
+| TextCNN | v3 | [ ] | | | None; `torch.load` from disk |
+| ATAE-LSTM | v3 | [ ] | | | None; `torch.load` from disk |
+| DistilBERT | v3 | [ ] | | | None; `from_pretrained(local_files_only=True)` from the bundled directory |
+| `outputs/baseline.joblib` | legacy v2 | [ ] | | | None; `joblib` load from disk |
+| `outputs/bilstm.pt` | legacy v2 | [ ] | | | None; `torch.load` from disk |
+| `outputs/distilbert.pt` | legacy v2 | [ ] | | | **Hugging Face**: fetches the frozen `distilbert-base-uncased` base encoder. Excluded from the A3 offline guarantee |
+| `outputs/vocab.json` | legacy v2 | [ ] | | | None; local vocabulary file |
 
 - [x] Included v3 artifacts load fully offline. All six read from local files and none contacts a remote host at inference time
 - [x] The preserved v2 DistilBERT external dependency is documented and excluded from the A3 offline guarantee. Legacy `outputs/distilbert.pt` stores only the classification head and fine-tuned layers, so its frozen base encoder is fetched from `distilbert-base-uncased`. This is stated in the README and quick-start Path A, and the offline guarantee is scoped to the v3 models it applies to
@@ -188,7 +196,7 @@ artifact-mode decision but do not discharge these gates.
 | Streamlit acceptance | Juan Martinez | [ ] | Manual pass and screenshots outstanding |
 | Package content/security scan | | [ ] | Preflight scan clean in section 6; rerun against the final archive |
 | ZIP extraction retest | | [ ] | Extracted lightweight package recorded 355 passed / 11 skipped in preflight; rerun against the final archive |
-| Final tag and GitHub release | | [ ] | Blocked by every item above |
+| Final tag and GitHub release | | [ ] | Blocked by all outstanding gates above |
 
 Final sequence:
 
