@@ -2,6 +2,14 @@
 
 Use this checklist against one frozen source commit. Do not create the final tag or upload the ZIP until every required item is evidenced.
 
+**What a tick means here.** A ticked item was verified and recorded on the pre-release
+baseline, `main` at merge commit `6588d95` (PR #118), with the evidence held in
+`dle602-a3/release-verification.md`. Items that are properties of an artefact which does
+not exist yet, namely the final PDF, the final archive and the `v3.0.0` tag, stay blank
+even where a preflight measurement exists, because they must be re-established against the
+frozen commit. Group-owned acceptance items stay blank until the named contributor
+supplies evidence.
+
 ## Release identity
 
 - [ ] Exact post-merge #89 source commit recorded: `________________`
@@ -17,12 +25,12 @@ The implementation baseline before #89 is merge commit `0f02be3` (PR #100). The 
 
 ## Report and group record
 
-- [ ] Final report is 1,350–1,650 words under its declared counting rule
-- [ ] Canonical four-model results remain separate from exploratory GRU/TextCNN results
-- [ ] Tables, figures and token-evidence examples trace to frozen outputs
-- [ ] Attention and attribution are described as indicative, not causal
+- [ ] Final report is 1,350–1,650 words under its declared counting rule. Report v3 source declares 1,550; recheck after the contribution pass and re-export
+- [x] Canonical four-model results remain separate from exploratory GRU/TextCNN results. Table 2 is canonical; GRU and TextCNN appear only in Appendix A
+- [x] Tables, figures and token-evidence examples trace to frozen outputs. Canonical evidence cites commit `bf36c3b3`; the supplemental track cites artifact commit `cef08fa`, evaluation commit `941148c` and its prediction SHA-256
+- [x] Attention and attribution are described as indicative, not causal. Stated in the RQ3 answer and repeated in the Table 4 caption
 - [ ] Contribution record and dated hand-offs are confirmed by all members
-- [ ] Academic Integrity Declaration and Statement of Acknowledgement are complete
+- [x] Academic Integrity Declaration and Statement of Acknowledgement are complete. Report sections 12 and 13, including the AI-tool acknowledgement
 - [ ] Final PDF is copied into the package
 
 Group members:
@@ -33,12 +41,12 @@ Group members:
 
 ## Source and licensing
 
-- [ ] Package includes the required Python source, tests, README and DLE602 documentation
-- [ ] No `.env`, credentials, tokens, private keys, editor state, caches or temporary files
-- [ ] No `.git/`, `.venv/`, `__pycache__/`, `.pytest_cache/` or Hugging Face cache
-- [ ] No restricted SemEval XML or derived row-level dataset is redistributed
-- [ ] SemEval acquisition, placement and checksum instructions are included
-- [ ] Third-party dependencies and cited model/data sources are documented
+- [x] Package includes the required Python source, tests, README and DLE602 documentation. Built from the `build_a3_package.py` allowlist; 176 entries in `none` mode before any artifact is added
+- [x] No `.env`, credentials, tokens, private keys, editor state, caches or temporary files. Content scan in `dle602-a3/release-verification.md` section 6; the manual secret review below is still required
+- [x] No `.git/`, `.venv/`, `__pycache__/`, `.pytest_cache/` or Hugging Face cache
+- [x] No restricted SemEval XML or derived row-level dataset is redistributed. The archive carries no `.xml`, no `predictions.csv`, no `results.json` and nothing under `data/semeval2014/` beyond `.gitkeep`
+- [x] SemEval acquisition, placement and checksum instructions are included. `dle602-a3/semeval-restaurants.md`, quick-start Path C, and the `FileNotFoundError` raised by `parse_aspect_examples`
+- [x] Third-party dependencies and cited model/data sources are documented. `requirements.txt`, `constraints-a3.txt` and the report reference list
 - [ ] Git status is clean before the package is built
 
 ## Environment and installation
@@ -51,10 +59,10 @@ source .venv/bin/activate
 pip install -r requirements.txt -c constraints-a3.txt
 ```
 
-- [ ] Python and platform versions recorded
-- [ ] Installation succeeds without undocumented manual changes
-- [ ] Resolved critical dependency versions match `constraints-a3.txt`
-- [ ] CPU-only import and application startup succeed. Verified on `release/v3.0.0`: every neural predictor loaded wholly on CPU in the clean room **even though MPS was available on that host**, because all four torch adapters pin `map_location="cpu"`
+- [x] Python and platform versions recorded. Python 3.12.10 on macOS 26.5, Apple Silicon
+- [x] Installation succeeds without undocumented manual changes. Fresh clone and new virtual environment, `dle602-a3/release-verification.md` section 2
+- [x] Resolved critical dependency versions match `constraints-a3.txt`. torch 2.13.0, scikit-learn 1.8.0, transformers 5.14.1, streamlit 1.59.2, pandas 3.0.3
+- [x] CPU-only import and application startup succeed. Verified on `release/v3.0.0`: every neural predictor loaded wholly on CPU in the clean room **even though MPS was available on that host**. The four `.pt` adapters pin `map_location="cpu"`; the v3 DistilBERT stays on CPU because the local model is never moved to an accelerator
 
 ## Automated verification
 
@@ -64,14 +72,14 @@ pip install -r requirements.txt -c constraints-a3.txt
 .venv/bin/python scripts/export_absa_evidence.py
 ```
 
-- [ ] Full suite passes; counts and expected skips are recorded
-- [ ] Sample-provenance tests **executed rather than skipped**: run where `outputs/absa/evaluation/predictions.csv` exists and confirm the six `test_sample_matches_the_official_test_split` cases are not in the skip list. They skip silently in a clean clone, so a green suite there does not evidence this check (see `dle602-a3/release-verification.md`)
-- [ ] Legacy ISY503 regression path remains functional
-- [ ] All available v3 artifacts clean-load
-- [ ] `food` and `service` smoke predictions return one result per aspect
-- [ ] TF-IDF/LSTM/GRU/TextCNN evidence state is explicitly unsupported
-- [ ] ATAE-LSTM attention aligns to visible review offsets
-- [ ] DistilBERT attribution aligns to visible review offsets
+- [x] Full suite passes; counts and expected skips are recorded. Development machine 363 passed / 3 skipped, clean clone 357 / 9, extracted lightweight package 355 / 11; the deltas are explained in `dle602-a3/release-verification.md` section 3
+- [x] Sample-provenance tests **executed rather than skipped**: run where `outputs/absa/evaluation/predictions.csv` exists and confirm the six `test_sample_matches_the_official_test_split` cases are not in the skip list. They skip silently in a clean clone, so a green suite there does not evidence this check (see `dle602-a3/release-verification.md`)
+- [x] Legacy ISY503 regression path remains functional. The v2 suite under `tests/` passes alongside the ABSA suite in the same run
+- [x] All available v3 artifacts clean-load. `scripts/smoke_absa.py` covers the four canonical models in the clean room with no SemEval data present; `scripts/smoke_target_gru.py` and `scripts/smoke_text_cnn.py` cover the two exploratory models
+- [x] `food` and `service` smoke predictions return one result per aspect
+- [x] TF-IDF/LSTM/GRU/TextCNN evidence state is explicitly unsupported. Covered at registry level for all four by the parametrised `exposes_token_evidence` assertion over `REVIEW_ONLY_MODELS` in `tests/test_absa_results.py`. Per-predictor payload assertions exist for TF-IDF, GRU and TextCNN; the target-agnostic LSTM has no dedicated payload test and relies on the registry contract alone
+- [x] ATAE-LSTM attention aligns to visible review offsets. `tests/absa/test_attention.py` covers visible-token-only alignment, short sequences and preserved case, punctuation and offsets
+- [x] DistilBERT attribution aligns to visible review offsets. `tests/absa/test_attribution.py` asserts subword scores aggregate to exact visible tokens and rejects inconsistent inputs
 
 ## Data audit and evaluation evidence
 
@@ -82,12 +90,12 @@ With legitimately acquired Restaurants XML files:
 .venv/bin/python -m src.absa.evaluation.runner --device cpu
 ```
 
-- [ ] Audit reproduces the documented label and offset counts
-- [ ] Grouped split overlap assertions pass
-- [ ] Official retained test count is 1,120
-- [ ] Mixed-polarity subset is 228 instances across 80 sentences
-- [ ] Canonical evaluation output and prediction digest are preserved
-- [ ] CPU evaluation completes or any documented hardware limitation is reproduced honestly
+- [x] Audit reproduces the documented label and offset counts. Report Table 1; all annotated offsets valid and 105 `conflict` annotations counted before exclusion
+- [x] Grouped split overlap assertions pass. `tests/absa/test_splits.py` covers deterministic grouping and a loud overlap failure
+- [x] Official retained test count is 1,120. `outputs/absa/evaluation/results.json` records `official_test_examples: 1120`
+- [x] Mixed-polarity subset is 228 instances across 80 sentences. Same file, `mixed_polarity_examples: 228` and `mixed_polarity_sentences: 80`
+- [x] Canonical evaluation output and prediction digest are preserved. Frozen at commit `bf36c3b3` with prediction SHA-256 `b80dc72c…`
+- [x] Evaluation devices and cross-device timing limitations are documented honestly. DistilBERT was evaluated on MPS and the other models on CPU, so no full CPU evaluation was performed; the report states timing is observational and refuses to read architectural speedups from it
 
 The supplemental six-model command is:
 
@@ -97,14 +105,19 @@ The supplemental six-model command is:
   --device cpu
 ```
 
-- [ ] Supplemental output remains separate from `outputs/absa/evaluation/`
-- [ ] GRU and TextCNN remain labelled exploratory
+- [x] Supplemental output remains separate from `outputs/absa/evaluation/`. It writes to `outputs/absa/evaluation-six-model/`; both directories exist and neither overwrites the other
+- [x] GRU and TextCNN remain labelled exploratory. Confined to report Appendix A and `dle602-a3/six-model-results.md`
 
 ## Streamlit acceptance
 
 ```bash
 .venv/bin/streamlit run app.py
 ```
+
+This section is a manual acceptance pass assigned to Juan Martinez and stays entirely
+blank until that evidence arrives. Automated tests cover parts of the underlying
+behaviour, but they are not a substitute for running the application and capturing what a
+marker actually sees.
 
 - [ ] Landing page clearly separates ISY503 v2.3.0 and DLE602 v3.0.0
 - [ ] Intro page does not duplicate the sidebar logo
@@ -115,6 +128,7 @@ The supplemental six-model command is:
 - [ ] Supported token evidence renders safely with its limitation
 - [ ] Missing artifacts and invalid input show controlled errors without silent fallback
 - [ ] No stack trace or debug output appears in the user workflow
+- [ ] Public deployment opens without authentication in an incognito/unauthenticated session. The public link currently redirects to authentication, so this must stay pending until it is fixed and retested
 
 Capture at least:
 
@@ -125,24 +139,39 @@ Capture at least:
 
 ## Artifact strategy
 
-Record every included artifact:
+Record every included artifact. The v3 models answer the research questions; the four
+legacy v2 files are shipped by every artifact-bearing mode because the preserved ISY503
+page needs them. `Bytes` and `SHA-256` are properties of the final package and stay blank
+until it is built; `Runtime/network dependency` is a stable property of the artifact and is
+recorded now.
 
-| Artifact | Included? | Bytes | SHA-256 | Runtime/network dependency |
-|---|:---:|---:|---|---|
-| TF-IDF | [ ] | | | |
-| Target LSTM | [ ] | | | |
-| Target GRU | [ ] | | | |
-| TextCNN | [ ] | | | |
-| ATAE-LSTM | [ ] | | | |
-| DistilBERT | [ ] | | | |
+| Artifact | Track | Included? | Bytes | SHA-256 | Runtime/network dependency |
+|---|---|:---:|---:|---|---|
+| TF-IDF | v3 | [ ] | | | None; `joblib` load from disk |
+| Target LSTM | v3 | [ ] | | | None; `torch.load` from disk |
+| Target GRU | v3 | [ ] | | | None; `torch.load` from disk |
+| TextCNN | v3 | [ ] | | | None; `torch.load` from disk |
+| ATAE-LSTM | v3 | [ ] | | | None; `torch.load` from disk |
+| DistilBERT | v3 | [ ] | | | None; `from_pretrained(local_files_only=True)` from the bundled directory |
+| `outputs/baseline.joblib` | legacy v2 | [ ] | | | None; `joblib` load from disk |
+| `outputs/bilstm.pt` | legacy v2 | [ ] | | | None; `torch.load` from disk |
+| `outputs/distilbert.pt` | legacy v2 | [ ] | | | **Hugging Face**: fetches the frozen `distilbert-base-uncased` base encoder. Excluded from the A3 offline guarantee |
+| `outputs/vocab.json` | legacy v2 | [ ] | | | None; local vocabulary file |
 
-- [ ] Included artifacts load offline, or each external retrieval is explicit and checksum-verified
-- [ ] Artifact-bearing modes include the four legacy v2 files required by the preserved ISY503 page
-- [ ] The lightweight CPU strategy includes at least the verified small-model path
+- [x] Included v3 artifacts load fully offline. All six read from local files and none contacts a remote host at inference time
+- [x] The preserved v2 DistilBERT external dependency is documented and excluded from the A3 offline guarantee. Legacy `outputs/distilbert.pt` stores only the classification head and fine-tuned layers, so its frozen base encoder is fetched from `distilbert-base-uncased`. This is stated in the README and quick-start Path A, and the offline guarantee is scoped to the v3 models it applies to
+- [x] Artifact-bearing modes include the four legacy v2 files required by the preserved ISY503 page. `LEGACY_ARTIFACTS` ships `baseline.joblib`, `bilstm.pt`, `distilbert.pt` and `vocab.json`
+- [x] The lightweight CPU strategy includes at least the verified small-model path. All five small v3 artifacts are in `lightweight` mode and each loaded wholly on CPU in the clean room
 - [ ] DistilBERT packaging decision is consistent with the confirmed LMS limit
-- [ ] No package claims offline support if a Hugging Face download is still required
+- [x] No package claims offline support if a Hugging Face download is still required. The README and quick-start Path A both carry the legacy-DistilBERT caveat
 
 ## Package inspection
+
+Every item here is a property of one built archive, so all stay blank until the final
+archive exists. Preflight builds from `release/v3.0.0` already passed the equivalent
+checks, including an identical SHA-256 across two consecutive builds of the same mode; see
+`dle602-a3/release-verification.md` sections 5 and 6. Those measurements inform the
+artifact-mode decision but do not discharge these gates.
 
 - [ ] Archive is built with `scripts/build_a3_package.py` using the selected artifact mode
 - [ ] Archive is built from a documented allowlist, not the entire working directory
@@ -159,15 +188,15 @@ Record every included artifact:
 
 | Gate | Owner | Status | Evidence |
 |---|---|:---:|---|
-| Report and references | Group | [ ] | |
-| Contribution record | Group | [ ] | |
-| Clean installation | | [ ] | |
-| Tests and CPU smoke | | [ ] | |
-| Artifact checksums/sizes | | [ ] | |
-| Streamlit acceptance | | [ ] | |
-| Package content/security scan | | [ ] | |
-| ZIP extraction retest | | [ ] | |
-| Final tag and GitHub release | | [ ] | |
+| Report and references | Group | [ ] | Report v3 source frozen at `lfariabr/masters-swe-ai@5b5d671`; PDF still to be regenerated |
+| Contribution record | Group | [ ] | Victor and Juan evidence assigned 29 Jul, outstanding |
+| Clean installation | Luis Faria | [x] | `dle602-a3/release-verification.md` section 2 |
+| Tests and CPU smoke | Luis Faria | [x] | `dle602-a3/release-verification.md` sections 3 and 4 |
+| Artifact checksums/sizes | | [ ] | Sizes recorded in sections 1 and 5; per-artifact SHA-256 still to be captured in the table above |
+| Streamlit acceptance | Juan Martinez | [ ] | Manual pass and screenshots outstanding |
+| Package content/security scan | | [ ] | Preflight scan clean in section 6; rerun against the final archive |
+| ZIP extraction retest | | [ ] | Extracted lightweight package recorded 355 passed / 11 skipped in preflight; rerun against the final archive |
+| Final tag and GitHub release | | [ ] | Blocked by all outstanding gates above |
 
 Final sequence:
 

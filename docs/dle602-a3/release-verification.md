@@ -86,9 +86,12 @@ were inspected directly after loading:
 
 This held **while MPS was available on the host** (`torch.backends.mps.is_available()`
 returned `True`, CUDA `False`), so the result is not an artefact of a
-CPU-only machine. All four torch adapters in `src/absa/inference/predictors.py`
-pin `map_location="cpu"` when loading a checkpoint, which makes the inference
-path device-independent.
+CPU-only machine. Two distinct mechanisms produce it. The four `.pt` adapters in
+`src/absa/inference/predictors.py` pin `map_location="cpu"` when loading a
+checkpoint. The v3 DistilBERT does not use `map_location` at all: it loads
+through `from_pretrained(..., local_files_only=True)` and stays on CPU because
+the resulting model is never moved to an accelerator. Both paths are therefore
+device-independent, but not for the same reason.
 
 This evidences the A2 risk-register contingency for artifact loading failure,
 "fall back to CPU inference", and the checklist item requiring CPU-only import
