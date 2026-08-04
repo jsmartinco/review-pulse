@@ -62,7 +62,7 @@ pip install -r requirements.txt -c constraints-a3.txt
 - [x] Python and platform versions recorded. Python 3.12.10 on macOS 26.5, Apple Silicon
 - [x] Installation succeeds without undocumented manual changes. Fresh clone and new virtual environment, `dle602-a3/release-verification.md` section 2
 - [x] Resolved critical dependency versions match `constraints-a3.txt`. torch 2.13.0, scikit-learn 1.8.0, transformers 5.14.1, streamlit 1.59.2, pandas 3.0.3
-- [x] CPU-only import and application startup succeed. Verified on `release/v3.0.0`: every neural predictor loaded wholly on CPU in the clean room **even though MPS was available on that host**, because all four torch adapters pin `map_location="cpu"`
+- [x] CPU-only import and application startup succeed. Verified on `release/v3.0.0`: every neural predictor loaded wholly on CPU in the clean room **even though MPS was available on that host**. The four `.pt` adapters pin `map_location="cpu"`; the v3 DistilBERT stays on CPU because the local model is never moved to an accelerator
 
 ## Automated verification
 
@@ -75,9 +75,9 @@ pip install -r requirements.txt -c constraints-a3.txt
 - [x] Full suite passes; counts and expected skips are recorded. Development machine 363 passed / 3 skipped, clean clone 357 / 9, extracted lightweight package 355 / 11; the deltas are explained in `dle602-a3/release-verification.md` section 3
 - [x] Sample-provenance tests **executed rather than skipped**: run where `outputs/absa/evaluation/predictions.csv` exists and confirm the six `test_sample_matches_the_official_test_split` cases are not in the skip list. They skip silently in a clean clone, so a green suite there does not evidence this check (see `dle602-a3/release-verification.md`)
 - [x] Legacy ISY503 regression path remains functional. The v2 suite under `tests/` passes alongside the ABSA suite in the same run
-- [x] All available v3 artifacts clean-load. `scripts/smoke_absa.py` passes in the clean room with no SemEval data present
+- [x] All available v3 artifacts clean-load. `scripts/smoke_absa.py` covers the four canonical models in the clean room with no SemEval data present; `scripts/smoke_target_gru.py` and `scripts/smoke_text_cnn.py` cover the two exploratory models
 - [x] `food` and `service` smoke predictions return one result per aspect
-- [x] TF-IDF/LSTM/GRU/TextCNN evidence state is explicitly unsupported. `test_tfidf_predictor_reports_unsupported_evidence`, `test_target_gru_predictor_is_aspect_invariant_and_unsupported`, `test_text_cnn_predictor_is_aspect_invariant_and_unsupported`
+- [x] TF-IDF/LSTM/GRU/TextCNN evidence state is explicitly unsupported. Covered at registry level for all four by the parametrised `exposes_token_evidence` assertion over `REVIEW_ONLY_MODELS` in `tests/test_absa_results.py`. Per-predictor payload assertions exist for TF-IDF, GRU and TextCNN; the target-agnostic LSTM has no dedicated payload test and relies on the registry contract alone
 - [x] ATAE-LSTM attention aligns to visible review offsets. `tests/absa/test_attention.py` covers visible-token-only alignment, short sequences and preserved case, punctuation and offsets
 - [x] DistilBERT attribution aligns to visible review offsets. `tests/absa/test_attribution.py` asserts subword scores aggregate to exact visible tokens and rejects inconsistent inputs
 
@@ -95,7 +95,7 @@ With legitimately acquired Restaurants XML files:
 - [x] Official retained test count is 1,120. `outputs/absa/evaluation/results.json` records `official_test_examples: 1120`
 - [x] Mixed-polarity subset is 228 instances across 80 sentences. Same file, `mixed_polarity_examples: 228` and `mixed_polarity_sentences: 80`
 - [x] Canonical evaluation output and prediction digest are preserved. Frozen at commit `bf36c3b3` with prediction SHA-256 `b80dc72c…`
-- [x] CPU evaluation completes or any documented hardware limitation is reproduced honestly. DistilBERT ran on MPS and the other models on CPU; the report states timing is observational and refuses to read speedups from it
+- [x] Evaluation devices and cross-device timing limitations are documented honestly. DistilBERT was evaluated on MPS and the other models on CPU, so no full CPU evaluation was performed; the report states timing is observational and refuses to read architectural speedups from it
 
 The supplemental six-model command is:
 
@@ -128,6 +128,7 @@ marker actually sees.
 - [ ] Supported token evidence renders safely with its limitation
 - [ ] Missing artifacts and invalid input show controlled errors without silent fallback
 - [ ] No stack trace or debug output appears in the user workflow
+- [ ] Public deployment opens without authentication in an incognito/unauthenticated session. The public link currently redirects to authentication, so this must stay pending until it is fixed and retested
 
 Capture at least:
 
@@ -149,7 +150,8 @@ Record every included artifact:
 | ATAE-LSTM | [ ] | | | |
 | DistilBERT | [ ] | | | |
 
-- [ ] Included artifacts load offline, or each external retrieval is explicit and checksum-verified. The six v3 artifacts load offline, but the legacy v2 `outputs/distilbert.pt` still fetches its frozen base encoder from `distilbert-base-uncased`. That retrieval is documented but **not** checksum-verified, so this item is not yet satisfied
+- [x] Included v3 artifacts load fully offline. All six read from local files and none contacts a remote host at inference time
+- [x] The preserved v2 DistilBERT external dependency is documented and excluded from the A3 offline guarantee. Legacy `outputs/distilbert.pt` stores only the classification head and fine-tuned layers, so its frozen base encoder is fetched from `distilbert-base-uncased`. This is stated in the README and quick-start Path A, and the offline guarantee is scoped to the v3 models it applies to
 - [x] Artifact-bearing modes include the four legacy v2 files required by the preserved ISY503 page. `LEGACY_ARTIFACTS` ships `baseline.joblib`, `bilstm.pt`, `distilbert.pt` and `vocab.json`
 - [x] The lightweight CPU strategy includes at least the verified small-model path. All five small v3 artifacts are in `lightweight` mode and each loaded wholly on CPU in the clean room
 - [ ] DistilBERT packaging decision is consistent with the confirmed LMS limit
