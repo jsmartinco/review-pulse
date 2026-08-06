@@ -80,8 +80,8 @@ The validation covers:
 | UI-08 | DistilBERT attribution evidence | Pass with observations  |EV-08 | |
 | UI-09 | Unsupported evidence handling | Pass |EV-09 | |
 | UI-10 | Empty review validation | Pass |EV-010 | |
-| UI-11 | Empty/invalid aspect validation | Not run | EV-011 | |
-| UI-12 | ReviewPulse v2/v3 compatibility | Not run | |EV-12 |
+| UI-11 | Empty/invalid aspect validation | Pass | EV-011 | |
+| UI-12 | ReviewPulse v2/v3 compatibility | Pass | EV-12 | |
 
 Allowed status values:
 
